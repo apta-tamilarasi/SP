@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title>Zoho Books Simplepay</title>
+	<link href="./css/style.css" rel="stylesheet">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+		integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
+
+<body>
+	<script src="https://js.zohostatic.com/zohofinance/v1/zf_sdk.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+		integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+		crossorigin="anonymous"></script>
+
+	<section id="container">
+		<section id="fieldmap">
+			<h4 class="head">Zohobook - Simple Pay</h4>
+			<div id="debitcredit">
+				<div class="debitcredit">
+					<h2>Debit</h2>
+					<h4>Expense</h4>
+					<div>
+						<div class="input-group mb-3">
+							<label class="input-group-text" for="inputGroupSelect01">SDL - Employer</label>
+							<select class="form-select fieldmap-input" id="inputGroupSelect01">
+							</select>
+						</div>
+						<div class="input-group mb-3">
+							<label class="input-group-text" for="inputGroupSelect01">UIF - Employer</label>
+							<select class="form-select fieldmap-input" id="inputGroupSelect01">
+							</select>
+						</div>
+						<h4>Salary Expense</h4>
+						<div class="input-group mb-3">
+							<label class="input-group-text" for="inputGroupSelect01">Basic Salary</label>
+							<select class="form-select fieldmap-input" id="inputGroupSelect01">
+							</select>
+						</div>
+						<h4>Medical and Pension Expense</h4>
+						<div class="input-group mb-3">
+							<label class="input-group-text" for="inputGroupSelect01">Medical Aid - Employer</label>
+							<select class="form-select fieldmap-input" id="inputGroupSelect01">
+							</select>
+						</div>
+						<div class="input-group mb-3">
+							<label class="input-group-text" for="inputGroupSelect01">Pension Fund - Employer</label>
+							<select class="form-select fieldmap-input" id="inputGroupSelect01">
+							</select>
+						</div>
+						<h4>Other Expense</h4>
+						<div class="input-group mb-3">
+							<label class="input-group-text" for="inputGroupSelect01">Other expense</label>
+							<select class="form-select fieldmap-input" id="inputGroupSelect01">
+							</select>
+						</div>
+
+					</div>
+
+				</div>
+				<div class="debitcredit">
+					<h2>Credit</h2>
+					<h4>Liability</h4>
+					<div>
+						<div class="input-group mb-3">
+							<label class="input-group-text" for="inputGroupSelect01">SDL - Employer</label>
+							<select class="form-select fieldmap-input" id="inputGroupSelect01">
+							</select>
+						</div>
+						<div class="input-group mb-3">
+							<label class="input-group-text" for="inputGroupSelect01">UIF - Total</label>
+							<select class="form-select fieldmap-input" id="inputGroupSelect01">
+							</select>
+						</div>
+						<div class="input-group mb-3">
+							<label class="input-group-text" for="inputGroupSelect01">Nett Pay</label>
+							<select class="form-select fieldmap-input" id="inputGroupSelect01">
+							</select>
+						</div>
+						<div class="input-group mb-3">
+							<label class="input-group-text" for="inputGroupSelect01">Tax</label>
+							<select class="form-select fieldmap-input" id="inputGroupSelect01">
+							</select>
+						</div>
+						<h4>Medical and Pension Liability</h4>
+						<div class="input-group mb-3">
+							<label class="input-group-text" for="inputGroupSelect01">Medical Aid Liability</label>
+							<select class="form-select fieldmap-input" id="inputGroupSelect01">
+							</select>
+						</div>
+						<div class="input-group mb-3">
+							<label class="input-group-text" for="inputGroupSelect01">Pension Fund Total</label>
+							<select class="form-select fieldmap-input" id="inputGroupSelect01">
+							</select>
+						</div>
+						<h4>Other Liability</h4>
+						<div class="input-group mb-3">
+							<label class="input-group-text" for="inputGroupSelect01">Other Liability</label>
+							<select class="form-select fieldmap-input" id="inputGroupSelect01">
+							</select>
+						</div>
+					</div>
+
+				</div>
+			</div>
+			<div class="d-grid gap-2 d-md-block">
+				<button class="btn btn-primary" type="button" onclick="cancel()">Cancel</button>
+				<button class="btn btn-primary" type="button" onclick="save()">Save</button>
+			</div>
+
+		</section>
+		<section id="payrun" style="display: none;">
+			<div id="nav">
+				<h4>Zohobook - Simple Pay</h4>
+				<ul class="nav nav-tabs">
+					<li class="nav-item">
+						<a class="nav-link active" onclick="pageNav(0)" aria-current="page" href="#">Journal Create</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" onclick="pageNav(1)" href="#">Journal Record</a>
+					</li>
+				</ul>
+			</div>
+			<div class="editbtn">
+				<div class="d-grid gap-2 d-md-block">
+					<button class="btn btn-primary" type="button" onclick="editMapping()">Edit Mapping</button>
+				</div>
+
+				<div class="d-grid gap-2 d-md-block">
+					<button class="btn btn-primary createbtn" type="button" onclick="getPayment()"
+						id="create-journal-btn" style="display:none;">Create a journal</button>
+				</div>
+			</div>
+			<div id="simplepay" class="navTab">
+				<div class="input-group mb-3">
+					<label class="input-group-text" for="inputGroupSelect01">Choose your Simple Pay Company</label>
+					<select class="form-select payrun-input" id="inputGroupSelect01" onchange="clientSelect(value)">
+					</select>
+				</div>
+				<div class="input-group mb-3" id="paymentrun-div" style="visibility: hidden;">
+					<label class="input-group-text" for="inputGroupSelect01">Choose your Simple Pay Payrun</label>
+					<select class="form-select paymentrun-input" id="inputGroupSelect01" onchange="payrunSelect(value)">
+					</select>
+				</div>
+				<div class="input-group  mb-3" id="textarea-div" style="visibility: hidden;">
+					<span class="input-group-text">Enter the Journal Note</span>
+					<textarea class="form-control" aria-label="With textarea"></textarea>
+				</div>
+
+			</div>
+			<div class="navTab" style="display: none;" id="journalrecords" >
+				<table class="table table-bordered">
+					<thead>
+						<tr>
+							<th>S.No</th>
+							<th>Journal Date</th>
+							<th>Payment Run Id</th>
+							<th>Note</th>
+							<th>Total Amount</th>
+						</tr>
+					</thead>
+					<tbody id="records"></tbody>
+				</table>
+				<div id="records"></div>
+				<div id="pagination"></div>
+			</div>
+		</section>
+	</section>
+	<script src="./js/extension.js" charset="utf-8"></script>
+	<script src="./js/simplepay.js"></script>
+	<script src="./js/zohobook.js"></script>
+</body>
+
+</html>

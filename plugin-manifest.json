@@ -1,0 +1,39 @@
+{
+  "locale": [
+    "en"
+  ],
+  "service": "FINANCE",
+  "whiteListedDomains": [],
+  "modules": {
+    "widgets": [
+      {
+        "location": "webtab",
+        "name": "simple pay",
+        "url": "/app/widget.html",
+        "logo": "/app/img/logo.png"
+      }
+    ]
+  },
+  "config": [],
+  "usedConnections": [
+    {
+      "connectionLinkName": "zohobook",
+      "connectionName": "zohobook",
+      "serviceName": "zoho_books",
+      "userAccess": true,
+      "isUserDefinedService": false,
+      "sharedBy": "862825209",
+      "scope": [
+        "ZohoBooks.fullaccess.all"
+      ]
+    },
+    {
+      "connectionLinkName": "paysimple",
+      "connectionName": "paysimple",
+      "serviceName": "paysimple",
+      "userAccess": true,
+      "isUserDefinedService": true,
+      "sharedBy": "862825209"
+    }
+  ]
+}
