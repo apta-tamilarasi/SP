@@ -1,4 +1,5 @@
 let textarea = document.getElementsByTagName("textarea")
+let recordDiv=document.getElementById("recorddiv")
 let isJournal = false
 let records = []
 
@@ -14,7 +15,7 @@ const journalCreate = async (details) => {
     console.log(isJournal);
 
     if (!isJournal) {
-        await journal(details, "POST", "")
+        await journal(details)
     }
     else {
         createJournalBtn.disabled = false
@@ -52,7 +53,7 @@ const journalCustomCreate = async (journalData) => {
         });
 };
 
-const journal = async (details, type, id) => {
+const journal = async (details) => {
     const journalData = {
         "journal_date": `${journalDate}`,
         // "entry_number":`sample pay -${journalNumber}`,
@@ -159,17 +160,9 @@ const journal = async (details, type, id) => {
         return line.amount !== 0
     })
     console.log(journalData);
-    
-    let path
-    if (id != "") {
-        path = `${orgDetails.dc}/journals?organization_id=${orgDetails.orgId}`
-    }
-    else {
-        path = `${orgDetails.dc}/journals/${id}?organization_id=${orgDetails.orgId}`
-    }
     let journal = {
-        url: path,
-        method: type,
+        url: `${orgDetails.dc}/journals?organization_id=${orgDetails.orgId}`,
+        method: "POST",
         body: {
             mode: "raw",
             raw: journalData,
@@ -182,7 +175,7 @@ const journal = async (details, type, id) => {
             console.log(responseJSON);
 
             if (responseJSON.code == 0) {
-                type === "POST" ? ShowNotification("success", "Journal created successfully into zohobook") : ShowNotification("success", "Journal edited successfully into zohobook")
+                ShowNotification("success", "Journal created successfully into zohobook")
                 createJournalBtn.style.display = "none"
                 createJournalBtn.disabled = false
                 paymentRunDiv.style.visibility = "hidden"
@@ -221,25 +214,28 @@ const journalCustomGet = async (type, page) => {
             if (responseJSON.page_context.has_more_page === true) {
                 journalCustomGet(type, page);
             } else {
-                isJournal=false
+                isJournal = false
                 if (records.length !== 0) {
                     if (type === "") {
+                         recordDiv.style.display="none"
                         records.find((re) => {
-                            if(`Simple Pay - ${paymentRunId}` === re.cf__com_kz7zl3_reference_id){
-                                isJournal=true
-                            } 
+                            if (`Simple Pay - ${paymentRunId}` === re.cf__com_kz7zl3_reference_id) {
+                                isJournal = true
+                            }
                         })
                     }
                     else if (type === "record") {
+                        recordDiv.style.display="block"
                         navView[1].style.display = "block"
                         await pagination(records)
                     }
                 }
                 else {
-                    if(type==="record"){
-                          navView[0].style.display = "none"
+                    if (type === "record") {
+                        navView[0].style.display = "none"
+                        recordDiv.style.display="none"
                         ShowNotification("error", `Journal Record is not available, Create new journal`)
-                   
+
                     }
                 }
             }
@@ -250,91 +246,141 @@ const journalCustomGet = async (type, page) => {
 
 }
 const pagination = async (records) => {
-    console.log(records)
-    const objects = records
+    console.log(records);
+    const objects = records;
 
     let currentPage = 1;
     const itemsPerPage = 25;
 
-        function displayObjects(page) {
-            const objectList = document.getElementById('records');
-            objectList.innerHTML = '';
-            const start = (page - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const paginatedObjects = objects.slice(start, end);
-    
-            paginatedObjects.forEach((obj,i) => {
-                const row = document.createElement('tr');
-                const no = document.createElement('td');
-                no.textContent = start+i+1;
-                const idCell = document.createElement('td');
-                idCell.textContent = obj.cf__com_kz7zl3_date;
-    
-                const nameCell = document.createElement('td');
-                nameCell.textContent = obj.cf__com_kz7zl3_reference_id;
-                const note= document.createElement('td');
-                note.textContent = obj.cf__com_kz7zl3_notes;
-                
-                const total= document.createElement('td');
-               total.textContent = obj.cf__com_kz7zl3_total;
-               row.appendChild(no);
-                row.appendChild(idCell);
-                row.appendChild(nameCell);
-                row.appendChild(note);
-                row.appendChild(total);
-                objectList.appendChild(row);
-            });
-    
-            renderPaginationButtons();
+    function displayObjects(page) {
+        const objectList = document.getElementById('records');
+        objectList.innerHTML = '';
+        const start = (page - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const paginatedObjects = objects.slice(start, end);
+
+        paginatedObjects.forEach((obj, i) => {
+            const row = document.createElement('tr');
+            row.style.position = 'relative';
+
+            const no = document.createElement('td');
+            no.textContent = start + i + 1;
+            const idCell = document.createElement('td');
+            idCell.textContent = obj.cf__com_kz7zl3_date;
+
+            const nameCell = document.createElement('td');
+            nameCell.textContent = obj.cf__com_kz7zl3_reference_id;
+            const note = document.createElement('td');
+            note.textContent = obj.cf__com_kz7zl3_notes;
+
+            const total = document.createElement('td');
+            total.textContent = obj.cf__com_kz7zl3_total;
+
+            const deleteIcon = document.createElement('span');
+            deleteIcon.innerHTML = '&#10060;';
+            deleteIcon.classList.add('delete-icon');
+            deleteIcon.setAttribute("onclick", `deleteJournal('${obj.module_record_id},${obj.cf__com_kz7zl3_id}')`)
+
+            row.appendChild(no);
+            row.appendChild(idCell);
+            row.appendChild(nameCell);
+            row.appendChild(note);
+            row.appendChild(total);
+            row.appendChild(deleteIcon);
+            objectList.appendChild(row);
+        });
+
+        renderPaginationButtons();
+    }
+
+    function renderPaginationButtons() {
+        const totalPages = Math.ceil(objects.length / itemsPerPage);
+        const paginationDiv = document.getElementById('pagination');
+        paginationDiv.innerHTML = '';
+
+        const prevButton = document.createElement('button');
+        prevButton.textContent = '<<';
+        prevButton.classList.add('btn-primary', 'mr-2');
+        prevButton.disabled = currentPage === 1;
+        if (currentPage === 1) {
+            prevButton.style.cursor = 'not-allowed';
         }
-    
-        function renderPaginationButtons() {
-            const totalPages = Math.ceil(objects.length / itemsPerPage);
-            const paginationDiv = document.getElementById('pagination');
-            paginationDiv.innerHTML = '';
-    
-            const prevButton = document.createElement('button');
-            prevButton.textContent = 'Previous';
-            prevButton.classList.add('btn', 'btn-primary', 'mr-2');
-            prevButton.disabled = currentPage === 1;
-            prevButton.onclick = () => changePage(currentPage - 1);
-            paginationDiv.appendChild(prevButton);
-    
-    
-            let startPage = Math.max(1, currentPage - 1);
-            let endPage = Math.min(totalPages, currentPage + 1);
-            console.log(startPage,endPage);
-            if(startPage===endPage){
-                paginationDiv.style.display="none"
-            }
-            else{
-                paginationDiv.style.display="block" 
-            }
-    
-            for (let i = startPage; i <= endPage; i++) {
-                const pageButton = document.createElement('button');
-                pageButton.textContent = i;
-                pageButton.classList.add('btn', 'btn-secondary', 'mr-2');
-                if (i === currentPage) {
-                    pageButton.disabled = true;
-                }
-                pageButton.onclick = () => changePage(i);
-                paginationDiv.appendChild(pageButton);
-            }
-    
-    
-            const nextButton = document.createElement('button');
-            nextButton.textContent = 'Next';
-            nextButton.classList.add('btn', 'btn-primary');
-            nextButton.disabled = currentPage === totalPages;
-            nextButton.onclick = () => changePage(currentPage + 1);
-            paginationDiv.appendChild(nextButton);
+        prevButton.onclick = () => changePage(currentPage - 1);
+        paginationDiv.appendChild(prevButton);
+
+        const pageButton = document.createElement('button');
+        pageButton.textContent = currentPage;
+        pageButton.classList.add('btn-secondary', 'mr-2');
+        pageButton.disabled = true;
+        paginationDiv.appendChild(pageButton);
+
+        const nextButton = document.createElement('button');
+        nextButton.textContent = '>>';
+        nextButton.classList.add('btn-primary');
+        nextButton.disabled = currentPage === totalPages;
+        if (currentPage === totalPages) {
+            nextButton.style.cursor = 'not-allowed';
         }
-    
-        function changePage(page) {
-            currentPage = page;
-            displayObjects(currentPage);
+        nextButton.onclick = () => changePage(currentPage + 1);
+        paginationDiv.appendChild(nextButton);
+
+        if (totalPages === 1) {
+            paginationDiv.style.display = 'none';
+        } else {
+            paginationDiv.style.display = 'block';
         }
+    }
+
+    function changePage(page) {
+        currentPage = page;
         displayObjects(currentPage);
-    
+    }
+
+    displayObjects(currentPage);
 };
+
+const deleteJournal = async(id) => {
+    let ids = id.split(",")
+    let idModule = ids[0]
+    let idJournal = ids[1]
+
+    console.log(idJournal, idModule);
+    try{
+        
+    let journal = {
+        url: `${orgDetails.dc}/journals/${idJournal}?organization_id=${orgDetails.orgId}`,
+        method: "DELETE",
+        connection_link_name: "zohobook",
+    };
+   await ZFAPPS.request(journal)
+        .then(async function (value) {
+            let responseJSON = JSON.parse(value.data.body);
+            console.log(responseJSON)
+        })
+        .catch(function (err) {
+            console.error("err", err);
+        })
+
+    let module = {
+        url: `${orgDetails.dc}/cm__com_kz7zl3_journal_record/${idModule}?organization_id=${orgDetails.orgId}`,
+        method: "DELETE",
+        connection_link_name: "zohobook",
+    };
+    await ZFAPPS.request(module)
+        .then(async function (value) {
+            let responseJSON = JSON.parse(value.data.body);
+            console.log(responseJSON)
+        })
+        .catch(function (err) {
+            console.error("err", err);
+        })
+        ShowNotification("success", `Journal Deleted Successfully!`)
+        await journalCustomGet("record",1)
+    }
+    catch(err){
+        console.error(err);
+        ShowNotification("error", `Journal can't be Deleted`)
+    }
+
+
+}
