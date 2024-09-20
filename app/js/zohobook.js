@@ -87,7 +87,7 @@ const journal = async (details, type, id) => {
             account = fieldmappingData[0].cf__com_kz7zl3_credit_sdl_employer
         }
         else if (c.line_item === "uif_total") {
-            account = fieldmappingData[0].cf__com_kz7zl3_debit_uif_total
+            account = fieldmappingData[0].cf__com_kz7zl3_credit_uif_total
         }
         else if (c.line_item === "pension_fund_total") {
             account = fieldmappingData[0].cf__com_kz7zl3_credit_pension
@@ -96,7 +96,7 @@ const journal = async (details, type, id) => {
             account = fieldmappingData[0].cf__com_kz7zl3_credit_tax
         }
         else {
-            account = fieldmappingData[0].cf__com_kz7zl3_debit_other
+            account = fieldmappingData[0].cf__com_kz7zl3_credit_other
             otherExpense = true
         }
         let total = Object.values(c.amount).reduce((acc, val) => acc + val, 0);
@@ -157,8 +157,9 @@ const journal = async (details, type, id) => {
 
     journalData.line_items = journalData.line_items.filter((line) => {
         return line.amount !== 0
-
     })
+    console.log(journalData);
+    
     let path
     if (id != "") {
         path = `${orgDetails.dc}/journals?organization_id=${orgDetails.orgId}`
