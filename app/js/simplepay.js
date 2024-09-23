@@ -3,8 +3,8 @@ let paymentRun = document.getElementsByClassName("paymentrun-input")
 let paymentRunDiv = document.getElementById("paymentrun-div")
 let textareaDiv = document.getElementById("textarea-div")
 let paymentRunId = ""
-let journalDate=''
-let payrunDetails=[]
+let journalDate = ''
+let payrunDetails = []
 
 const simplepayClientGet = async () => {
     let client = {
@@ -43,17 +43,23 @@ const simplepayClientGet = async () => {
 
 const clientSelect = async (value) => {
     console.log(value);
-    await simplepayPaymentRunGet(value)
-
+    if (value != "") {
+        await simplepayPaymentRunGet(value)
+    }
+    else {
+        paymentRunDiv.style.visibility = "hidden"
+        textareaDiv.style.visibility = "hidden"
+        ShowNotification("error", "Please select the Valid company")
 }
-
+}
 const payrunSelect = (value) => {
-    let splitValue=value.split(",")
+    let splitValue = value.split(",")
     paymentRunId = splitValue[0]
-    journalDate=splitValue[1]
+    journalDate = splitValue[1]
     console.log(paymentRunId);
-    createJournalBtn.style.display="block"
-    
+    createJournalBtn.innerHTML = "Create Journal"
+    createJournalBtn.style.display = "block"
+
 }
 
 const simplepayPaymentRunGet = async (id) => {
@@ -79,13 +85,13 @@ const simplepayPaymentRunGet = async (id) => {
                     paymentruns.map((pay) => {
                         let option = document.createElement("option")
                         option.textContent = pay.payment_run.period_end_date
-                        option.value =`${pay.payment_run.id},${pay.payment_run.period_end_date}`
+                        option.value = `${pay.payment_run.id},${pay.payment_run.period_end_date}`
                         paymentRun[0].appendChild(option)
                     })
                 }
                 else {
                     paymentRunDiv.style.visibility = "hidden"
-                    textareaDiv.style.visibility ="hidden"
+                    textareaDiv.style.visibility = "hidden"
                     ShowNotification("error", "There is no payrun data avilable for the selected company")
                 }
                 console.log(paymentRun[0]);
@@ -103,32 +109,33 @@ const simplepayPaymentRunGet = async (id) => {
 
 
 const getPayment = async () => {
-    createJournalBtn.disabled=true
-    let textarea=document.getElementsByTagName("textarea")
+    createJournalBtn.innerHTML = 'Creating <span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> ';
+    createJournalBtn.disabled = true
+    let textarea = document.getElementsByTagName("textarea")
     console.log(textarea[0].value);
-    
-    console.log(paymentRunId);   
-   if(textarea[0].value!=""){
-    let pay = {
-        url: `https://api.payroll.simplepay.cloud/v1/payment_runs/${paymentRunId}/accounting`,
-        method: "GET",
-        connection_link_name: "paysimple",
-    };
-    ZFAPPS.request(pay)
-        .then(async function (value) {
-            try {
-                payrunDetails=JSON.parse(value.data.body)
-                await journalCreate(payrunDetails)
-            }
-            catch (err) {
-                createJournalBtn.disabled=false
-                console.error(err);
-            }
-        })
-   }
-   else{
-    createJournalBtn.disabled=false
-    ShowNotification("error", "Note Field cannot be empty")
 
-   }
+    console.log(paymentRunId);
+    if (textarea[0].value != "") {
+        let pay = {
+            url: `https://api.payroll.simplepay.cloud/v1/payment_runs/${paymentRunId}/accounting`,
+            method: "GET",
+            connection_link_name: "paysimple",
+        };
+        ZFAPPS.request(pay)
+            .then(async function (value) {
+                try {
+                    payrunDetails = JSON.parse(value.data.body)
+                    await journalCreate(payrunDetails)
+                }
+                catch (err) {
+                    createJournalBtn.disabled = false
+                    console.error(err);
+                }
+            })
+    }
+    else {
+        createJournalBtn.disabled = false
+        ShowNotification("error", "Note Field cannot be empty")
+
+    }
 }

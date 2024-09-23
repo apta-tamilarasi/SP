@@ -29,7 +29,17 @@
 }
 
 .head {
-    text-align: center;
+    background-image: linear-gradient(to right, blue, red);
+    -webkit-background-clip: text;
+    color: transparent;
+    width: 25%;
+    margin: auto;
+    /* text-align: center; */
+}
+.navhead{
+    background-image: linear-gradient(to right, blue, red);
+    -webkit-background-clip: text;
+    color: transparent;
 }
 
 .input-group-text {
@@ -142,4 +152,67 @@ textarea {
 
 tr:hover .delete-icon {
     visibility: visible;
+}
+
+
+.dots {
+    display: inline-block;
+}
+
+.dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin: 0 2px;
+    background-color: rgb(238, 233, 230);
+    border-radius: 50%;
+    animation: loading 1s infinite;
+    /* animation: jump 0.6s infinite alternate; */
+}
+
+.dot:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes jump {
+    0% {
+        transform: translateY(0);
+    }
+
+    100% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes loading {
+    0% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.5;
+    }
+}
+
+#waitingMessage {
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 15px;
+    background-image: linear-gradient(to right, blue, red);
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: loading 1s infinite;
 }

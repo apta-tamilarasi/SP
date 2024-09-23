@@ -1,26 +1,22 @@
 let textarea = document.getElementsByTagName("textarea")
-let recordDiv=document.getElementById("recorddiv")
+let recordDiv = document.getElementById("recorddiv")
 let isJournal = false
 let records = []
+let journalId = ""
 
 const journalCreate = async (details) => {
-
-    console.log(textarea[0].value);
-
-    console.log(journalDate);
-
-    console.log(details);
-    console.log(fieldmappingData);
     await journalCustomGet("", 1)
-    console.log(isJournal);
+    await journal(details)
 
-    if (!isJournal) {
-        await journal(details)
-    }
-    else {
-        createJournalBtn.disabled = false
-        ShowNotification("error", `This journal is already exits`)
-    }
+    //   if (!isJournal) {
+    //     await journal(details)
+    // }
+    // else {
+    //     console.log(journalId);
+    //     await journalGet(journalId)
+    //     createJournalBtn.disabled = false
+    //     ShowNotification("error", `This journal is already exits`)
+    // }
 
 
 }
@@ -199,7 +195,6 @@ const journalCustomGet = async (type, page) => {
     if (page === 1) {
         records = []
     }
-
     let custom = {
         url: `${orgDetails.dc}/cm__com_kz7zl3_journal_record?organization_id=${orgDetails.orgId}`,
         method: "GET",
@@ -217,15 +212,19 @@ const journalCustomGet = async (type, page) => {
                 isJournal = false
                 if (records.length !== 0) {
                     if (type === "") {
-                         recordDiv.style.display="none"
-                        records.find((re) => {
+                        recordDiv.style.display = "none"
+                        console.log(paymentRunId);
+                        records.map(async (re) => {
+                            console.log(`Simple Pay - ${paymentRunId}`, re.cf__com_kz7zl3_reference_id);
                             if (`Simple Pay - ${paymentRunId}` === re.cf__com_kz7zl3_reference_id) {
-                                isJournal = true
+                                await deleteJournal(`${re.module_record_id},${re.cf__com_kz7zl3_id}`, "other")
+                                // console.log(`${re.module_record_id},${re.cf__com_kz7zl3_id}`);
+                                // await journalGet(re.cf__com_kz7zl3_id,`${re.module_record_id},${re.cf__com_kz7zl3_id}`)
                             }
                         })
                     }
                     else if (type === "record") {
-                        recordDiv.style.display="block"
+                        recordDiv.style.display = "block"
                         navView[1].style.display = "block"
                         await pagination(records)
                     }
@@ -233,7 +232,7 @@ const journalCustomGet = async (type, page) => {
                 else {
                     if (type === "record") {
                         navView[0].style.display = "none"
-                        recordDiv.style.display="none"
+                        recordDiv.style.display = "none"
                         ShowNotification("error", `Journal Record is not available, Create new journal`)
 
                     }
@@ -339,48 +338,86 @@ const pagination = async (records) => {
     displayObjects(currentPage);
 };
 
-const deleteJournal = async(id) => {
+const deleteJournal = async (id, type) => {
+    if (type != "other") {
+        recordDiv.style.display = "none"
+        document.getElementById("waitingMessage").style.display = "block";
+    }
     let ids = id.split(",")
     let idModule = ids[0]
     let idJournal = ids[1]
+    try {
 
-    console.log(idJournal, idModule);
-    try{
-        
-    let journal = {
-        url: `${orgDetails.dc}/journals/${idJournal}?organization_id=${orgDetails.orgId}`,
-        method: "DELETE",
-        connection_link_name: "zohobook",
-    };
-   await ZFAPPS.request(journal)
-        .then(async function (value) {
-            let responseJSON = JSON.parse(value.data.body);
-            console.log(responseJSON)
-        })
-        .catch(function (err) {
-            console.error("err", err);
-        })
+        let journal = {
+            url: `${orgDetails.dc}/journals/${idJournal}?organization_id=${orgDetails.orgId}`,
+            method: "DELETE",
+            connection_link_name: "zohobook",
+        };
+        await ZFAPPS.request(journal)
+            .then(async function (value) {
+                let responseJSON = JSON.parse(value.data.body);
+                console.log(responseJSON)
+            })
+            .catch(function (err) {
+                console.error("err", err);
+            })
 
-    let module = {
-        url: `${orgDetails.dc}/cm__com_kz7zl3_journal_record/${idModule}?organization_id=${orgDetails.orgId}`,
-        method: "DELETE",
-        connection_link_name: "zohobook",
-    };
-    await ZFAPPS.request(module)
-        .then(async function (value) {
-            let responseJSON = JSON.parse(value.data.body);
-            console.log(responseJSON)
-        })
-        .catch(function (err) {
-            console.error("err", err);
-        })
-        ShowNotification("success", `Journal Deleted Successfully!`)
-        await journalCustomGet("record",1)
+        let module = {
+            url: `${orgDetails.dc}/cm__com_kz7zl3_journal_record/${idModule}?organization_id=${orgDetails.orgId}`,
+            method: "DELETE",
+            connection_link_name: "zohobook",
+        };
+        await ZFAPPS.request(module)
+            .then(async function (value) {
+                let responseJSON = JSON.parse(value.data.body);
+                console.log(responseJSON)
+            })
+            .catch(function (err) {
+                console.error("err", err);
+            })
+        if (type !== "other") {
+            document.getElementById("waitingMessage").style.display = "none";
+            ShowNotification("success", `Journal Deleted Successfully!`)
+            await journalCustomGet("record", 1)
+        }
     }
-    catch(err){
+    catch (err) {
         console.error(err);
+        recordDiv.style.display = "block"
+        document.getElementById("waitingMessage").style.display = "none";
         ShowNotification("error", `Journal can't be Deleted`)
     }
 
 
 }
+
+
+// const journalGet = async (idJournal,ids) => {
+//     try {
+
+//         let journal = {
+//             url: `${orgDetails.dc}/journals/${idJournal}?organization_id=${orgDetails.orgId}`,
+//             method: "GET",
+//             connection_link_name: "zohobook",
+//         };
+//         await ZFAPPS.request(journal)
+//             .then(async function (value) {
+//                 let responseJSON = JSON.parse(value.data.body);
+//                 console.log(responseJSON)
+//                 if(responseJSON.journal.length===0||responseJSON.code===1002){
+//                     await deleteJournal(ids, "other")
+//                 }
+//                 else{
+//                     isJournal = true
+//                 }
+
+//             })
+//             .catch(function (err) {
+//                 console.error("err", err);
+//             })
+//     }
+//     catch (err) {
+//         console.error(err);
+
+//     }
+// }
