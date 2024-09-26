@@ -5,6 +5,7 @@
 	<meta charset="UTF-8">
 	<title>Zoho Books Simplepay</title>
 	<link href="./css/style.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
 		integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 </head>
@@ -17,7 +18,9 @@
 
 	<section id="container">
 		<section id="fieldmap" style="display: none;">
-			<h4 class="head">Zohobook - Simple Pay</h4>
+			<h4 class="head">
+				<div class="icon"><i class="fa fa-angle-double-left" aria-hidden="true" onclick="back()"> Back</i></div>
+				<div class="content">Zohobook - Simple Pay</div></h4>
 			<div id="debitcredit">
 				<div class="debitcredit">
 					<h2>Debit</h2>
@@ -106,7 +109,7 @@
 				</div>
 			</div>
 			<div class="d-grid gap-2 d-md-block">
-				<button class="btn btn-primary" type="button" onclick="cancel()">Cancel</button>
+				<button class="btn btn-primary" type="button" onclick="cancel()">Clear</button>
 				<button class="btn btn-primary" type="button" onclick="save()">Save</button>
 			</div>
 
@@ -128,10 +131,6 @@
 					<button class="btn btn-primary" type="button" onclick="editMapping()">Edit Mapping</button>
 				</div>
 
-				<div class="d-grid gap-2 d-md-block">
-					<button class="btn btn-primary createbtn" type="button" onclick="getPayment()"
-						id="create-journal-btn" style="display:none;">Create a journal</button>
-				</div>
 			</div>
 			<div id="simplepay" class="navTab">
 				<div class="input-group mb-3">
@@ -150,16 +149,22 @@
 				</div>
 
 			</div>
-			<div class="navTab" style="display: none;" id="journalrecords" >
+			
+			<div class="d-grid gap-2 d-md-block">
+				<button class="btn btn-primary createbtn" type="button" onclick="getPayment()"
+					id="create-journal-btn" style="display:none;">Create a journal</button>
+			</div>
+			<div class="navTab" style="display: none;" id="journalrecords">
 				<div id="recorddiv">
-					<table class="table table-bordered">
-						<thead>
+					<table class="table">
+						<thead class="table-light">
 							<tr>
 								<th>S.No</th>
 								<th>Journal Date</th>
 								<th>Payment Run Id</th>
 								<th>Note</th>
 								<th>Total Amount</th>
+								<th></th>
 							</tr>
 						</thead>
 						<tbody id="records"></tbody>
@@ -168,7 +173,10 @@
 					<div id="pagination"></div>
 				</div>
 			</div>
-			<div id="waitingMessage" style="display: none;">Deleting... Please wait</div>
+			<div id="waitingMessage" style="display: none;"></div>
+			<div class="alert alert-danger" id="warning" role="alert"  style="display: none;">
+				Journal record is not available, create new journal
+			</div>
 		</section>
 	</section>
 	<script src="./js/extension.js" charset="utf-8"></script>

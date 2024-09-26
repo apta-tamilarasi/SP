@@ -14,7 +14,6 @@ const simplepayClientGet = async () => {
     };
     ZFAPPS.request(client)
         .then(function (value) {
-            console.log(value);
             try {
                 let clients = JSON.parse(value.data.body)
                 console.log(clients);
@@ -109,13 +108,14 @@ const simplepayPaymentRunGet = async (id) => {
 
 
 const getPayment = async () => {
-    createJournalBtn.innerHTML = 'Creating <span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> ';
-    createJournalBtn.disabled = true
+   
     let textarea = document.getElementsByTagName("textarea")
     console.log(textarea[0].value);
 
     console.log(paymentRunId);
     if (textarea[0].value != "") {
+        createJournalBtn.innerHTML = 'Creating <span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> ';
+        createJournalBtn.disabled = true
         let pay = {
             url: `https://api.payroll.simplepay.cloud/v1/payment_runs/${paymentRunId}/accounting`,
             method: "GET",

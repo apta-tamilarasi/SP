@@ -54,7 +54,8 @@ const journal = async (details) => {
         "journal_date": `${journalDate}`,
         // "entry_number":`sample pay -${journalNumber}`,
         "reference_number": `Simple Pay - ${paymentRunId}`,
-        "notes": `Simple Pay ${journalDate} - ${textarea[0].value}`,
+        // "notes": `Simple Pay ${journalDate} - ${textarea[0].value}`,
+        "notes": `${textarea[0].value}`,
         "line_items": [
             {
                 "account_id": fieldmappingData[0].cf__com_kz7zl3_debit_other,
@@ -224,15 +225,17 @@ const journalCustomGet = async (type, page) => {
                         })
                     }
                     else if (type === "record") {
-                        recordDiv.style.display = "block"
                         navView[1].style.display = "block"
                         await pagination(records)
                     }
                 }
                 else {
                     if (type === "record") {
-                        navView[0].style.display = "none"
+                        navView[1].style.display = "none"
+                         navView[0].style.display = "none"
                         recordDiv.style.display = "none"
+                        document.getElementById("waitingMessage").style.display = "none";
+                        document.getElementById("warning").style.display="block"
                         ShowNotification("error", `Journal Record is not available, Create new journal`)
 
                     }
@@ -245,6 +248,7 @@ const journalCustomGet = async (type, page) => {
 
 }
 const pagination = async (records) => {
+    document.getElementById("waitingMessage").style.display = "none";
     console.log(records);
     const objects = records;
 
@@ -275,8 +279,8 @@ const pagination = async (records) => {
             const total = document.createElement('td');
             total.textContent = obj.cf__com_kz7zl3_total;
 
-            const deleteIcon = document.createElement('span');
-            deleteIcon.innerHTML = '&#10060;';
+            const deleteIcon = document.createElement('td');
+            deleteIcon.innerHTML = '<i class="fa fa-trash-o" aria-hidden="true"></i>';
             deleteIcon.classList.add('delete-icon');
             deleteIcon.setAttribute("onclick", `deleteJournal('${obj.module_record_id},${obj.cf__com_kz7zl3_id}')`)
 
@@ -288,7 +292,8 @@ const pagination = async (records) => {
             row.appendChild(deleteIcon);
             objectList.appendChild(row);
         });
-
+        recordDiv.style.display = "block"
+        navView[1].style.display = "block"
         renderPaginationButtons();
     }
 
@@ -342,6 +347,7 @@ const deleteJournal = async (id, type) => {
     if (type != "other") {
         recordDiv.style.display = "none"
         document.getElementById("waitingMessage").style.display = "block";
+        document.getElementById("waitingMessage").innerHTML= "Deleting... Please wait"
     }
     let ids = id.split(",")
     let idModule = ids[0]
@@ -376,7 +382,7 @@ const deleteJournal = async (id, type) => {
                 console.error("err", err);
             })
         if (type !== "other") {
-            document.getElementById("waitingMessage").style.display = "none";
+             recordDiv.style.display = "none"
             ShowNotification("success", `Journal Deleted Successfully!`)
             await journalCustomGet("record", 1)
         }

@@ -8,6 +8,7 @@ let createJournalBtn = document.getElementById("create-journal-btn")
 let nav = document.getElementsByTagName("a")
 let navView = document.getElementsByClassName("navTab")
 let recordId = ''
+let isEdit = false
 
 
 window.onload = function () {
@@ -120,8 +121,8 @@ const save = async () => {
             cf__com_kz7zl3_credit_other: input[12].value
         }
         fieldmappingData = [mappingData]
-        fieldMap.style.display="none"
-        payrun.style.display="block"
+        fieldMap.style.display = "none"
+        payrun.style.display = "block"
         await pageNav(0)
         await customPost(mappingData)
     }
@@ -129,6 +130,21 @@ const save = async () => {
 }
 
 let customGet = async () => {
+    if (isEdit) {
+        let customDel = {
+            url: `${orgDetails.dc}/cm__com_kz7zl3_field_mapping/${recordId}?organization_id=${orgDetails.orgId}`,
+            method: "DELETE",
+            connection_link_name: "zohobook",
+        };
+        await ZFAPPS.request(customDel)
+            .then(function (value) {
+                console.log(value);
+            })
+            .catch((er) => {
+                console.error(er);
+            });
+        isEdit = false
+    }
     let custom = {
         url: `${orgDetails.dc}/cm__com_kz7zl3_field_mapping?organization_id=${orgDetails.orgId}`,
         method: "GET",
@@ -173,10 +189,7 @@ let customPost = async (mappingData) => {
             let responseJSON = JSON.parse(value.data.body);
             console.log(responseJSON);
             recordId = responseJSON.module_record.module_record_id
-            // fieldmappingData = responseJSON.module_records
             await simplepayClientGet()
-
-
         })
         .catch(function (err) {
             console.error("err", err);
@@ -195,6 +208,7 @@ const ShowNotification = (type, message) => {
 const editMapping = () => {
     fieldMap.style.display = "block"
     payrun.style.display = "none"
+    isEdit=true
 
     input[0].value = fieldmappingData[0].cf__com_kz7zl3_field_mapping;
     input[1].value = fieldmappingData[0].cf__com_kz7zl3_debit_uif_employer;
@@ -209,40 +223,38 @@ const editMapping = () => {
     input[10].value = fieldmappingData[0].cf__com_kz7zl3_credit_medical;
     input[11].value = fieldmappingData[0].cf__com_kz7zl3_credit_pension;
     input[12].value = fieldmappingData[0].cf__com_kz7zl3_credit_other;
-    let customDel = {
-        url: `${orgDetails.dc}/cm__com_kz7zl3_field_mapping/${recordId}?organization_id=${orgDetails.orgId}`,
-        method: "DELETE",
-        connection_link_name: "zohobook",
-    };
-    ZFAPPS.request(customDel)
-        .then(function (value) {
-            console.log(value);
-        })
-        .catch((er) => {
-            console.error(er);
-        });
-
 }
 
 const pageNav = async (index) => {
-    index===0? await simplepayClientGet():await journalCustomGet("record",1)
+    index === 0 ? simplepayClientGet() : journalCustomGet("record", 1)
+    if (index === 1) {
+        document.getElementById("waitingMessage").style.display = "block";
+        document.getElementById("waitingMessage").innerHTML = "Record Fetching... Please wait"
+    }
     for (let i = 0; i < nav.length; i++) {
-       navView[i].style.display = "none"
+        navView[i].style.display = "none"
         console.log(i, index);
         createJournalBtn.style.display = "none"
         paymentRunDiv.style.visibility = "hidden"
         textareaDiv.style.visibility = "hidden"
+        document.getElementById("warning").style.display="none"
         textarea[0].value = ""
         if (index === i) {
             nav[i].removeAttribute("class")
             nav[i].setAttribute("class", "nav-link active")
-            navView[i].style.display = "block"
+            index !== 1 ? navView[i].style.display = "block" : ""
+
         }
         else {
             nav[i].removeAttribute("class")
             nav[i].setAttribute("class", "nav-link")
         }
-      
+
     }
 
+}
+
+let back=async()=>{
+    isEdit=false
+   await customGet()
 }
