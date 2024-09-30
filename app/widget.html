@@ -44,12 +44,12 @@
 						</div>
 						<h4>Medical and Pension Expense</h4>
 						<div class="input-group mb-3">
-							<label class="input-group-text" for="inputGroupSelect01">Medical Aid - Employer</label>
+							<label class="input-group-text" for="inputGroupSelect01">Medical Aid</label>
 							<select class="form-select fieldmap-input" id="inputGroupSelect01">
 							</select>
 						</div>
 						<div class="input-group mb-3">
-							<label class="input-group-text" for="inputGroupSelect01">Pension Fund - Employer</label>
+							<label class="input-group-text" for="inputGroupSelect01">Pension Fund</label>
 							<select class="form-select fieldmap-input" id="inputGroupSelect01">
 							</select>
 						</div>
@@ -89,12 +89,12 @@
 						</div>
 						<h4>Medical and Pension Liability</h4>
 						<div class="input-group mb-3">
-							<label class="input-group-text" for="inputGroupSelect01">Medical Aid Liability</label>
+							<label class="input-group-text" for="inputGroupSelect01">Medical Aid </label>
 							<select class="form-select fieldmap-input" id="inputGroupSelect01">
 							</select>
 						</div>
 						<div class="input-group mb-3">
-							<label class="input-group-text" for="inputGroupSelect01">Pension Fund Total</label>
+							<label class="input-group-text" for="inputGroupSelect01">Pension Total</label>
 							<select class="form-select fieldmap-input" id="inputGroupSelect01">
 							</select>
 						</div>
@@ -108,7 +108,7 @@
 
 				</div>
 			</div>
-			<div class="d-grid gap-2 d-md-block">
+			<div class="d-grid gap-2 d-md-block" id="btndiv">
 				<button class="btn btn-primary" type="button" onclick="cancel()">Clear</button>
 				<button class="btn btn-primary" type="button" onclick="save()">Save</button>
 			</div>
@@ -134,28 +134,28 @@
 			</div>
 			<div id="simplepay" class="navTab">
 				<div class="input-group mb-3">
-					<label class="input-group-text" for="inputGroupSelect01">Choose your Simple Pay Company</label>
+					<label class="input-group-text" for="inputGroupSelect01">Simple Pay Company</label>
 					<select class="form-select payrun-input" id="inputGroupSelect01" onchange="clientSelect(value)">
 					</select>
 				</div>
 				<div class="input-group mb-3" id="paymentrun-div" style="visibility: hidden;">
-					<label class="input-group-text" for="inputGroupSelect01">Choose your Simple Pay Payrun</label>
+					<label class="input-group-text" for="inputGroupSelect01">Simple Pay Payrun</label>
 					<select class="form-select paymentrun-input" id="inputGroupSelect01" onchange="payrunSelect(value)">
 					</select>
 				</div>
 				<div class="input-group  mb-3" id="textarea-div" style="visibility: hidden;">
-					<span class="input-group-text">Enter the Journal Note</span>
+					<span class="input-group-text">Journal Note</span>
 					<textarea class="form-control" aria-label="With textarea"></textarea>
 				</div>
 
 			</div>
 			
-			<div class="d-grid gap-2 d-md-block">
+			<div class="d-grid gap-2 d-md-block" id="btndiv">
 				<button class="btn btn-primary createbtn" type="button" onclick="getPayment()"
 					id="create-journal-btn" style="display:none;">Create a journal</button>
 			</div>
 			<div class="navTab" style="display: none;" id="journalrecords">
-				<div id="recorddiv">
+				<div id="recorddiv" style="display: none;">
 					<table class="table">
 						<thead class="table-light">
 							<tr>

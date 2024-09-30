@@ -3,6 +3,7 @@ let recordDiv = document.getElementById("recorddiv")
 let isJournal = false
 let records = []
 let journalId = ""
+let newRecord = []
 
 const journalCreate = async (details) => {
     await journalCustomGet("", 1)
@@ -214,7 +215,6 @@ const journalCustomGet = async (type, page) => {
                 if (records.length !== 0) {
                     if (type === "") {
                         recordDiv.style.display = "none"
-                        console.log(paymentRunId);
                         records.map(async (re) => {
                             console.log(`Simple Pay - ${paymentRunId}`, re.cf__com_kz7zl3_reference_id);
                             if (`Simple Pay - ${paymentRunId}` === re.cf__com_kz7zl3_reference_id) {
@@ -232,10 +232,10 @@ const journalCustomGet = async (type, page) => {
                 else {
                     if (type === "record") {
                         navView[1].style.display = "none"
-                         navView[0].style.display = "none"
+                        navView[0].style.display = "none"
                         recordDiv.style.display = "none"
                         document.getElementById("waitingMessage").style.display = "none";
-                        document.getElementById("warning").style.display="block"
+                        document.getElementById("warning").style.display = "block"
                         ShowNotification("error", `Journal Record is not available, Create new journal`)
 
                     }
@@ -248,106 +248,139 @@ const journalCustomGet = async (type, page) => {
 
 }
 const pagination = async (records) => {
+    newRecord = []
+    for (let re of records) {
+        let journal = {
+            url: `${orgDetails.dc}/journals/${re.cf__com_kz7zl3_id}?organization_id=${orgDetails.orgId}`,
+            method: "GET",
+            connection_link_name: "zohobook",
+        };
+
+        try {
+            let value = await ZFAPPS.request(journal);
+            let responseJSON = JSON.parse(value.data.body);
+
+            if (responseJSON.code === 1002) {
+                await deleteJournal(`${re.module_record_id},${re.cf__com_kz7zl3_id}`, "other");
+            } else {
+                newRecord.push(re);
+            }
+        } catch (err) {
+            console.error("Error:", err);
+        }
+    }
+
     document.getElementById("waitingMessage").style.display = "none";
-    console.log(records);
-    const objects = records;
+    document.getElementById("warning").style.display = "none";
+    console.log(newRecord, "new");
 
+    const objects = newRecord;
     let currentPage = 1;
-    const itemsPerPage = 25;
+    const itemsPerPage = 10;
 
-    function displayObjects(page) {
-        const objectList = document.getElementById('records');
-        objectList.innerHTML = '';
-        const start = (page - 1) * itemsPerPage;
-        const end = start + itemsPerPage;
-        const paginatedObjects = objects.slice(start, end);
+    if (newRecord.length > 0) {
+        document.getElementById("waitingMessage").style.display = "none";
+        document.getElementById("warning").style.display = "none"
+        function displayObjects(page) {
+            const objectList = document.getElementById('records');
+            objectList.innerHTML = '';
+            const start = (page - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedObjects = objects.slice(start, end);
 
-        paginatedObjects.forEach((obj, i) => {
-            const row = document.createElement('tr');
-            row.style.position = 'relative';
+            paginatedObjects.forEach((obj, i) => {
+                const row = document.createElement('tr');
+                row.style.position = 'relative';
 
-            const no = document.createElement('td');
-            no.textContent = start + i + 1;
-            const idCell = document.createElement('td');
-            idCell.textContent = obj.cf__com_kz7zl3_date;
+                const no = document.createElement('td');
+                no.textContent = start + i + 1;
+                const idCell = document.createElement('td');
+                idCell.textContent = obj.cf__com_kz7zl3_date;
 
-            const nameCell = document.createElement('td');
-            nameCell.textContent = obj.cf__com_kz7zl3_reference_id;
-            const note = document.createElement('td');
-            note.textContent = obj.cf__com_kz7zl3_notes;
+                const nameCell = document.createElement('td');
+                nameCell.textContent = obj.cf__com_kz7zl3_reference_id;
+                const note = document.createElement('td');
+                note.textContent = obj.cf__com_kz7zl3_notes;
 
-            const total = document.createElement('td');
-            total.textContent = obj.cf__com_kz7zl3_total;
+                const total = document.createElement('td');
+                total.textContent = obj.cf__com_kz7zl3_total;
 
-            const deleteIcon = document.createElement('td');
-            deleteIcon.innerHTML = '<i class="fa fa-trash-o" aria-hidden="true"></i>';
-            deleteIcon.classList.add('delete-icon');
-            deleteIcon.setAttribute("onclick", `deleteJournal('${obj.module_record_id},${obj.cf__com_kz7zl3_id}')`)
+                const deleteIcon = document.createElement('td');
+                deleteIcon.innerHTML = '<i class="fa fa-trash-o" aria-hidden="true"></i>';
+                deleteIcon.classList.add('delete-icon');
+                deleteIcon.setAttribute("onclick", `deleteJournal('${obj.module_record_id},${obj.cf__com_kz7zl3_id}')`)
 
-            row.appendChild(no);
-            row.appendChild(idCell);
-            row.appendChild(nameCell);
-            row.appendChild(note);
-            row.appendChild(total);
-            row.appendChild(deleteIcon);
-            objectList.appendChild(row);
-        });
-        recordDiv.style.display = "block"
-        navView[1].style.display = "block"
-        renderPaginationButtons();
-    }
-
-    function renderPaginationButtons() {
-        const totalPages = Math.ceil(objects.length / itemsPerPage);
-        const paginationDiv = document.getElementById('pagination');
-        paginationDiv.innerHTML = '';
-
-        const prevButton = document.createElement('button');
-        prevButton.textContent = '<<';
-        prevButton.classList.add('btn-primary', 'mr-2');
-        prevButton.disabled = currentPage === 1;
-        if (currentPage === 1) {
-            prevButton.style.cursor = 'not-allowed';
+                row.appendChild(no);
+                row.appendChild(idCell);
+                row.appendChild(nameCell);
+                row.appendChild(note);
+                row.appendChild(total);
+                row.appendChild(deleteIcon);
+                objectList.appendChild(row);
+            });
+            recordDiv.style.display = "block"
+            navView[1].style.display = "block"
+            renderPaginationButtons();
         }
-        prevButton.onclick = () => changePage(currentPage - 1);
-        paginationDiv.appendChild(prevButton);
 
-        const pageButton = document.createElement('button');
-        pageButton.textContent = currentPage;
-        pageButton.classList.add('btn-secondary', 'mr-2');
-        pageButton.disabled = true;
-        paginationDiv.appendChild(pageButton);
+        function renderPaginationButtons() {
+            const totalPages = Math.ceil(objects.length / itemsPerPage);
+            const paginationDiv = document.getElementById('pagination');
+            paginationDiv.innerHTML = '';
 
-        const nextButton = document.createElement('button');
-        nextButton.textContent = '>>';
-        nextButton.classList.add('btn-primary');
-        nextButton.disabled = currentPage === totalPages;
-        if (currentPage === totalPages) {
-            nextButton.style.cursor = 'not-allowed';
+            const prevButton = document.createElement('button');
+            prevButton.textContent = '<<';
+            prevButton.classList.add('btn-primary', 'mr-2');
+            prevButton.disabled = currentPage === 1;
+            if (currentPage === 1) {
+                prevButton.style.cursor = 'not-allowed';
+            }
+            prevButton.onclick = () => changePage(currentPage - 1);
+            paginationDiv.appendChild(prevButton);
+
+            const pageButton = document.createElement('button');
+            pageButton.textContent = currentPage;
+            pageButton.classList.add('btn-secondary', 'mr-2');
+            pageButton.disabled = true;
+            paginationDiv.appendChild(pageButton);
+
+            const nextButton = document.createElement('button');
+            nextButton.textContent = '>>';
+            nextButton.classList.add('btn-primary');
+            nextButton.disabled = currentPage === totalPages;
+            if (currentPage === totalPages) {
+                nextButton.style.cursor = 'not-allowed';
+            }
+            nextButton.onclick = () => changePage(currentPage + 1);
+            paginationDiv.appendChild(nextButton);
+
+            if (totalPages === 1) {
+                paginationDiv.style.display = 'none';
+            } else {
+                paginationDiv.style.display = 'block';
+            }
         }
-        nextButton.onclick = () => changePage(currentPage + 1);
-        paginationDiv.appendChild(nextButton);
 
-        if (totalPages === 1) {
-            paginationDiv.style.display = 'none';
-        } else {
-            paginationDiv.style.display = 'block';
+        function changePage(page) {
+            currentPage = page;
+            displayObjects(currentPage);
         }
-    }
 
-    function changePage(page) {
-        currentPage = page;
         displayObjects(currentPage);
     }
-
-    displayObjects(currentPage);
+    else{
+        recordDiv.style.display = "none";
+        document.getElementById("waitingMessage").style.display = "none";
+        document.getElementById("warning").style.display = "block"
+        ShowNotification("error", `Journal Record is not available, Create new journal`)
+    }
 };
 
 const deleteJournal = async (id, type) => {
     if (type != "other") {
         recordDiv.style.display = "none"
         document.getElementById("waitingMessage").style.display = "block";
-        document.getElementById("waitingMessage").innerHTML= "Deleting... Please wait"
+        document.getElementById("waitingMessage").innerHTML = "Deleting... Please wait"
     }
     let ids = id.split(",")
     let idModule = ids[0]
@@ -382,7 +415,7 @@ const deleteJournal = async (id, type) => {
                 console.error("err", err);
             })
         if (type !== "other") {
-             recordDiv.style.display = "none"
+            recordDiv.style.display = "none"
             ShowNotification("success", `Journal Deleted Successfully!`)
             await journalCustomGet("record", 1)
         }
@@ -424,6 +457,5 @@ const deleteJournal = async (id, type) => {
 //     }
 //     catch (err) {
 //         console.error(err);
-
 //     }
 // }

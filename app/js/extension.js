@@ -228,17 +228,19 @@ const editMapping = () => {
 const pageNav = async (index) => {
     index === 0 ? simplepayClientGet() : journalCustomGet("record", 1)
     if (index === 1) {
+        recordDiv.style.display = "none";
         document.getElementById("waitingMessage").style.display = "block";
         document.getElementById("waitingMessage").innerHTML = "Record Fetching... Please wait"
     }
     for (let i = 0; i < nav.length; i++) {
         navView[i].style.display = "none"
-        console.log(i, index);
-        createJournalBtn.style.display = "none"
+       index===0? createJournalBtn.style.display = "none":''
         paymentRunDiv.style.visibility = "hidden"
         textareaDiv.style.visibility = "hidden"
         document.getElementById("warning").style.display="none"
         textarea[0].value = ""
+        console.log(index);
+        
         if (index === i) {
             nav[i].removeAttribute("class")
             nav[i].setAttribute("class", "nav-link active")

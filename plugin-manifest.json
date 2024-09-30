@@ -7,7 +7,7 @@
   "modules": {
     "widgets": [
       {
-        "location": "webtab",
+        "location": "dashboard.widget",
         "name": "simple pay",
         "url": "/app/widget.html",
         "logo": "/app/img/logo.png"
