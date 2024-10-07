@@ -27,7 +27,13 @@
 #btndiv{
     display: flex !important;
 }
-
+#bankcreate-btn{
+    display: flex !important;
+    margin: 25px 0px 0px 0px;
+}
+#bankname{
+    padding: .375rem 2.25rem .375rem .75rem !important;
+}
 .d-grid .btn {
     margin-left: 5px;
 }
@@ -61,6 +67,7 @@
 }
 
 .navhead {
+    margin-bottom: 20px;
     background-image: linear-gradient(to right, blue, red);
     -webkit-background-clip: text;
     color: transparent;
@@ -97,7 +104,7 @@ h2 {
 }
 
 .editbtn {
-    margin: 10px 0px;
+    margin: 20px 10px;
 }
 
 
@@ -235,4 +242,19 @@ tr:hover .delete-icon {
 }
 .alert{
     padding: 5px !important;
+}
+
+#wageInput{
+    padding:30px 5px 20px 5px;
+}
+#wageInput .input-group-text{
+    width: 100% !important;
+}
+#wageInput .form-label,.modal-body label{
+    font-size: 15px !important;
+    font-weight: bolder !important;
+
+}
+.form-check{
+    padding: 10px 0px 0px 50px !important;
 }

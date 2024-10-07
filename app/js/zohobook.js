@@ -4,22 +4,13 @@ let isJournal = false
 let records = []
 let journalId = ""
 let newRecord = []
+let nettPay = 0
+let currencyInput = document.getElementById("currency")
+let bankName = document.getElementById("bankname")
 
 const journalCreate = async (details) => {
     await journalCustomGet("", 1)
     await journal(details)
-
-    //   if (!isJournal) {
-    //     await journal(details)
-    // }
-    // else {
-    //     console.log(journalId);
-    //     await journalGet(journalId)
-    //     createJournalBtn.disabled = false
-    //     ShowNotification("error", `This journal is already exits`)
-    // }
-
-
 }
 
 const journalCustomCreate = async (journalData) => {
@@ -53,10 +44,9 @@ const journalCustomCreate = async (journalData) => {
 const journal = async (details) => {
     const journalData = {
         "journal_date": `${journalDate}`,
-        // "entry_number":`sample pay -${journalNumber}`,
         "reference_number": `Simple Pay - ${paymentRunId}`,
-        // "notes": `Simple Pay ${journalDate} - ${textarea[0].value}`,
         "notes": `${textarea[0].value}`,
+        "status": fieldmappingData[0].cf__com_kz7zl3_journal_entry,
         "line_items": [
             {
                 "account_id": fieldmappingData[0].cf__com_kz7zl3_debit_other,
@@ -109,6 +99,7 @@ const journal = async (details) => {
                 "amount": total,
                 "description": c.label + " Liability"
             }
+            c.line_item === "nett_pay" ? nettPay = total : ""
             journalData.line_items.push(obj)
         }
 
@@ -136,7 +127,6 @@ const journal = async (details) => {
             otherExpense = true
         }
         let total = Object.values(d.amount).reduce((acc, val) => acc + val, 0);
-        console.log(total, otherExpense);
 
         if (otherExpense) {
             journalData.line_items[0].amount = journalData.line_items[0].amount + total
@@ -157,7 +147,7 @@ const journal = async (details) => {
     journalData.line_items = journalData.line_items.filter((line) => {
         return line.amount !== 0
     })
-    console.log(journalData);
+
     let journal = {
         url: `${orgDetails.dc}/journals?organization_id=${orgDetails.orgId}`,
         method: "POST",
@@ -170,10 +160,10 @@ const journal = async (details) => {
     ZFAPPS.request(journal)
         .then(async function (value) {
             let responseJSON = JSON.parse(value.data.body);
-            console.log(responseJSON);
 
             if (responseJSON.code == 0) {
-                ShowNotification("success", "Journal created successfully into zohobook")
+                await createEmployeeTransaction(fieldmappingData[0].cf__com_kz7zl3_wage_account, fieldmappingData[0].cf__com_kz7zl3_salary_deducation, fieldmappingData[0].cf__com_kz7zl3_transaction_type, nettPay)
+                ShowNotification("success", "Journal created successfully")
                 createJournalBtn.style.display = "none"
                 createJournalBtn.disabled = false
                 paymentRunDiv.style.visibility = "hidden"
@@ -205,7 +195,7 @@ const journalCustomGet = async (type, page) => {
     await ZFAPPS.request(custom)
         .then(async function (value) {
             let responseJSON = JSON.parse(value.data.body)
-            console.log(responseJSON);
+
             records = [...responseJSON.module_records]
             page = page + 1;
             if (responseJSON.page_context.has_more_page === true) {
@@ -216,11 +206,8 @@ const journalCustomGet = async (type, page) => {
                     if (type === "") {
                         recordDiv.style.display = "none"
                         records.map(async (re) => {
-                            console.log(`Simple Pay - ${paymentRunId}`, re.cf__com_kz7zl3_reference_id);
                             if (`Simple Pay - ${paymentRunId}` === re.cf__com_kz7zl3_reference_id) {
                                 await deleteJournal(`${re.module_record_id},${re.cf__com_kz7zl3_id}`, "other")
-                                // console.log(`${re.module_record_id},${re.cf__com_kz7zl3_id}`);
-                                // await journalGet(re.cf__com_kz7zl3_id,`${re.module_record_id},${re.cf__com_kz7zl3_id}`)
                             }
                         })
                     }
@@ -272,7 +259,6 @@ const pagination = async (records) => {
 
     document.getElementById("waitingMessage").style.display = "none";
     document.getElementById("warning").style.display = "none";
-    console.log(newRecord, "new");
 
     const objects = newRecord;
     let currentPage = 1;
@@ -329,7 +315,7 @@ const pagination = async (records) => {
             paginationDiv.innerHTML = '';
 
             const prevButton = document.createElement('button');
-            prevButton.textContent = '<<';
+            prevButton.textContent = '<';
             prevButton.classList.add('btn-primary', 'mr-2');
             prevButton.disabled = currentPage === 1;
             if (currentPage === 1) {
@@ -345,7 +331,7 @@ const pagination = async (records) => {
             paginationDiv.appendChild(pageButton);
 
             const nextButton = document.createElement('button');
-            nextButton.textContent = '>>';
+            nextButton.textContent = '>';
             nextButton.classList.add('btn-primary');
             nextButton.disabled = currentPage === totalPages;
             if (currentPage === totalPages) {
@@ -368,7 +354,7 @@ const pagination = async (records) => {
 
         displayObjects(currentPage);
     }
-    else{
+    else {
         recordDiv.style.display = "none";
         document.getElementById("waitingMessage").style.display = "none";
         document.getElementById("warning").style.display = "block"
@@ -395,7 +381,7 @@ const deleteJournal = async (id, type) => {
         await ZFAPPS.request(journal)
             .then(async function (value) {
                 let responseJSON = JSON.parse(value.data.body);
-                console.log(responseJSON)
+
             })
             .catch(function (err) {
                 console.error("err", err);
@@ -409,7 +395,7 @@ const deleteJournal = async (id, type) => {
         await ZFAPPS.request(module)
             .then(async function (value) {
                 let responseJSON = JSON.parse(value.data.body);
-                console.log(responseJSON)
+
             })
             .catch(function (err) {
                 console.error("err", err);
@@ -459,3 +445,135 @@ const deleteJournal = async (id, type) => {
 //         console.error(err);
 //     }
 // }
+
+const createEmployeeTransaction = async (fromAcc, toAcc, transactionType, nettPay) => {
+
+    if (transactionType === "group") {
+        let data = {
+            "transaction_type": "expense",
+            "account_id": toAcc,
+            "paid_through_account_id": fromAcc,
+            "date": journalDate,
+            "amount": nettPay,
+            "description": `Simple pay - All employees payment - ${paymentRunId}`,
+            "reference_number": `Simple Pay - ${paymentRunId}`,
+
+        }
+        await createExpense(data)
+    }
+    else {
+        let employeePayslip = await getPayslipForSpecificPayrun()
+        employeePayslip.map(async (ps) => {
+            let data = {
+                "account_id": toAcc,
+                "paid_through_account_id": fromAcc,
+                "date": journalDate,
+                "amount": ps.payslip.nett_pay,
+                "description": `Simple pay individual employee payment - ${paymentRunId}`,
+                "reference_number": `Simple Pay - ${paymentRunId}`,
+
+            }
+            await createExpense(data)
+
+        })
+
+    }
+}
+
+
+const createExpense = async (data) => {
+    let journal = {
+        url: `${orgDetails.dc}/expenses?organization_id=${orgDetails.orgId}`,
+        method: "POST",
+        body: {
+            mode: "raw",
+            raw: data,
+        },
+        connection_link_name: "zohobook",
+    };
+    ZFAPPS.request(journal)
+        .then(async function (value) {
+            let responseJSON = JSON.parse(value.data.body);
+
+        })
+        .catch((err) => {
+            console.log(err);
+
+        })
+}
+
+
+
+const createCurrency = async () => {
+    let journal = {
+        url: `${orgDetails.dc}/settings/currencies?organization_id=${orgDetails.orgId}`,
+        method: "GET",
+        connection_link_name: "zohobook",
+    };
+    ZFAPPS.request(journal)
+        .then(async function (value) {
+            currencyInput.textContent = ""
+            let selectedOption = document.createElement("option")
+            selectedOption.textContent = "Choose a currency type"
+            selectedOption.value = ''
+            selectedOption.selected = true
+            currencyInput.appendChild(selectedOption)
+            let responseJSON = JSON.parse(value.data.body);
+            responseJSON.currencies.map((c) => {
+                let selectedOption = document.createElement("option")
+                selectedOption.textContent = c.currency_code
+                selectedOption.value = c.currency_id
+                currencyInput.appendChild(selectedOption)
+            })
+
+
+        })
+        .catch((err) => {
+            console.log(err);
+
+        })
+}
+
+
+const createBank = async () => {
+    if (bankName.value != "" && currencyInput.value != "") {
+        document.getElementById("bankcreate").disabled = true
+        let data = {
+            "account_name": bankName.value,
+            "account_type": "bank",
+            "currency_id": currencyInput.value
+        }
+        let journal = {
+            url: `${orgDetails.dc}/bankaccounts?organization_id=${orgDetails.orgId}`,
+            method: "POST",
+            body: {
+                mode: "raw",
+                raw: data,
+            },
+            connection_link_name: "zohobook",
+        };
+        ZFAPPS.request(journal)
+            .then(async function (value) {
+                let responseJSON = JSON.parse(value.data.body);
+                var myModal = bootstrap.Modal.getInstance(document.getElementById('staticBackdrop'))
+                myModal.hide()
+                document.getElementById("bankcreate").disabled = false
+                if (responseJSON.code === 0) {
+                    let option = document.createElement("option")
+                    option.textContent = responseJSON.bankaccount.account_name
+                    option.value = responseJSON.bankaccount.account_id
+                    payAccount[0].appendChild(option)
+                    bankName.value = ""
+                    ShowNotification("success", `Bank Account created succesfully`)
+                }
+
+            })
+            .catch((err) => {
+                console.log(err);
+
+            })
+    }
+    else {
+        ShowNotification("error", `Field cannot be empty`)
+    }
+}

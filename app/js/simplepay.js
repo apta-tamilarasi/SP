@@ -1,3 +1,5 @@
+
+
 let clientInput = document.getElementsByClassName("payrun-input")
 let paymentRun = document.getElementsByClassName("paymentrun-input")
 let paymentRunDiv = document.getElementById("paymentrun-div")
@@ -16,7 +18,6 @@ const simplepayClientGet = async () => {
         .then(function (value) {
             try {
                 let clients = JSON.parse(value.data.body)
-                console.log(clients);
                 clientInput[0].textContent = ""
                 let selectedOption = document.createElement("option")
                 selectedOption.textContent = "Select the Company"
@@ -41,7 +42,6 @@ const simplepayClientGet = async () => {
 }
 
 const clientSelect = async (value) => {
-    console.log(value);
     if (value != "") {
         await simplepayPaymentRunGet(value)
     }
@@ -55,7 +55,6 @@ const payrunSelect = (value) => {
     let splitValue = value.split(",")
     paymentRunId = splitValue[0]
     journalDate = splitValue[1]
-    console.log(paymentRunId);
     createJournalBtn.innerHTML = "Create Journal"
     createJournalBtn.style.display = "block"
 
@@ -69,7 +68,6 @@ const simplepayPaymentRunGet = async (id) => {
     };
     ZFAPPS.request(client)
         .then(function (value) {
-            console.log(value);
             try {
                 let paymentruns = JSON.parse(value.data.body)
                 if (paymentruns.length > 0) {
@@ -93,7 +91,7 @@ const simplepayPaymentRunGet = async (id) => {
                     textareaDiv.style.visibility = "hidden"
                     ShowNotification("error", "There is no payrun data avilable for the selected company")
                 }
-                console.log(paymentRun[0]);
+              
 
             }
             catch (err) {
@@ -110,9 +108,6 @@ const simplepayPaymentRunGet = async (id) => {
 const getPayment = async () => {
    
     let textarea = document.getElementsByTagName("textarea")
-    console.log(textarea[0].value);
-
-    console.log(paymentRunId);
     if (textarea[0].value != "") {
         createJournalBtn.innerHTML = 'Creating <span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> ';
         createJournalBtn.disabled = true
@@ -138,4 +133,30 @@ const getPayment = async () => {
         ShowNotification("error", "Note Field cannot be empty")
 
     }
+}
+// 5361284
+
+
+const getPayslipForSpecificPayrun = async () => {
+    let client = {
+        url: `https://api.payroll.simplepay.cloud/v1/payment_runs/${paymentRunId}/payslips`,
+        // url:`https://api.payroll.simplepay.cloud/v1/clients/283811/employees`,
+        // url:`https://api.payroll.simplepay.cloud/v1/payslips/45757524`,
+        method: "GET",
+        connection_link_name: "paysimple",
+    };
+    return ZFAPPS.request(client)
+        .then(function (value) {
+            try {
+               return JSON.parse(value.data.body);
+               
+            }
+            catch (err) {
+                console.error(err);
+
+            }
+        })
+        .catch(function (err) {
+            console.error("client request failed", err);
+        });
 }

@@ -9,13 +9,15 @@ let nav = document.getElementsByTagName("a")
 let navView = document.getElementsByClassName("navTab")
 let recordId = ''
 let isEdit = false
+let payAccount = document.getElementsByClassName("payment-account")
+let transactionType = document.getElementsByClassName("form-check-input")
+let salaryDeductionAccount = document.getElementById("salary-deduction")
 
 
 window.onload = function () {
     ZFAPPS.extension.init().then(function (App) {
         ZFAPPS.get("organization")
             .then(async function (data) {
-                console.log(data, input);
                 orgDetails.dc = data.organization.api_root_endpoint;
                 orgDetails.orgId = data.organization.organization_id;
                 await chartOfAccountGet()
@@ -36,34 +38,50 @@ let chartOfAccountGet = async () => {
     };
     ZFAPPS.request(account)
         .then(function (value) {
-            // console.log(value);
+
             // input.map((input) => {
             for (let i = 0; i < input.length; i++) {
                 input[i].textContent = ""
                 let selectedOption = document.createElement("option")
-                selectedOption.textContent = "Choose a Zohobook account"
+                selectedOption.textContent = "Choose a ZB account"
                 selectedOption.value = ''
                 selectedOption.selected = true
                 input[i].appendChild(selectedOption)
                 let accounts = JSON.parse(value.data.body)
-                console.log(accounts);
+                if (i === 0) {
+                    payAccount[0].textContent = ""
+                    salaryDeductionAccount.textContent = ''
+                    let selectedOption = document.createElement("option")
+                    selectedOption.textContent = "Choose a ZB Bank account"
+                    selectedOption.value = ''
+                    selectedOption.selected = true
+                    payAccount[0].appendChild(selectedOption)
+
+                    let selectedOptionSalary = document.createElement("option")
+                    selectedOptionSalary.textContent = "Choose a ZB account"
+                    selectedOptionSalary.value = ''
+                    selectedOptionSalary.selected = true
+                    salaryDeductionAccount.appendChild(selectedOptionSalary)
+
+                }
 
                 accounts.chartofaccounts.map((acc) => {
                     let option = document.createElement("option")
                     option.textContent = acc.account_name
                     option.value = acc.account_id
 
-                    // if(i>=0&&i<=5){
-                    //     if(acc.account_type==="expense"||acc.account_type==="other_expense"||acc.account_type==="other_current_asset"||acc.account_type==="accounts_payable"){
-                    //         input[i].appendChild(option)
-                    //     }
-                    // }
-                    // else{
-                    //     if(acc.account_type==="income"||acc.account_type==="other_income"||acc.account_type==="other_current_liability"||acc.account_type==="accounts_receivable"){
-                    //         input[i].appendChild(option)
-                    //     } 
-                    // }
+                    if (i === 0) {
+                        if (acc.account_type === "expense") {
+                            let optionSalary = document.createElement("option")
+                            optionSalary.textContent = acc.account_name
+                            optionSalary.value = acc.account_id
+                            salaryDeductionAccount.appendChild(optionSalary)
 
+                        }
+                        if (acc.account_type === "bank") {
+                            payAccount[0].appendChild(option)
+                        }
+                    }
                     if (i >= 0 && i <= 5) {
                         if (acc.account_type === "expense") {
                             input[i].appendChild(option)
@@ -90,15 +108,20 @@ const cancel = () => {
         input[i].textContent = ""
     }
     chartOfAccountGet()
-
 }
 const save = async () => {
+    if (isEdit === true) {
+        await fieldMapDelete()
+    }
     let isEmpty = false
     for (let i = 0; i < input.length; i++) {
         if (input[i].value === "") {
             isEmpty = true
             break;
         }
+    }
+    if (payAccount[0].value === "" && salaryDeductionAccount.value != "") {
+        isEmpty = true
     }
     if (isEmpty) {
         ShowNotification("error", "Please map all field")
@@ -118,7 +141,12 @@ const save = async () => {
             cf__com_kz7zl3_credit_tax: input[9].value,
             cf__com_kz7zl3_credit_medical: input[10].value,
             cf__com_kz7zl3_credit_pension: input[11].value,
-            cf__com_kz7zl3_credit_other: input[12].value
+            cf__com_kz7zl3_credit_other: input[12].value,
+            cf__com_kz7zl3_wage_account: payAccount[0].value,
+            cf__com_kz7zl3_salary_deducation: salaryDeductionAccount.value,
+            cf__com_kz7zl3_transaction_type: transactionType[0].checked === true ? "individual" : "group",
+            cf__com_kz7zl3_journal_entry: transactionType[2].checked === true ? "draft" : "published"
+
         }
         fieldmappingData = [mappingData]
         fieldMap.style.display = "none"
@@ -131,19 +159,7 @@ const save = async () => {
 
 let customGet = async () => {
     if (isEdit) {
-        let customDel = {
-            url: `${orgDetails.dc}/cm__com_kz7zl3_field_mapping/${recordId}?organization_id=${orgDetails.orgId}`,
-            method: "DELETE",
-            connection_link_name: "zohobook",
-        };
-        await ZFAPPS.request(customDel)
-            .then(function (value) {
-                console.log(value);
-            })
-            .catch((er) => {
-                console.error(er);
-            });
-        isEdit = false
+        await fieldMapDelete()
     }
     let custom = {
         url: `${orgDetails.dc}/cm__com_kz7zl3_field_mapping?organization_id=${orgDetails.orgId}`,
@@ -153,8 +169,6 @@ let customGet = async () => {
     ZFAPPS.request(custom)
         .then(async function (value) {
             let fieldmapData = JSON.parse(value.data.body)
-            console.log(fieldmapData);
-
             if (fieldmapData.module_records.length === 0) {
                 fieldMap.style.display = "block"
                 payrun.style.display = "none"
@@ -187,7 +201,6 @@ let customPost = async (mappingData) => {
     ZFAPPS.request(custom)
         .then(async function (value) {
             let responseJSON = JSON.parse(value.data.body);
-            console.log(responseJSON);
             recordId = responseJSON.module_record.module_record_id
             await simplepayClientGet()
         })
@@ -205,10 +218,10 @@ const ShowNotification = (type, message) => {
     });
 };
 
-const editMapping = () => {
+const editMapping = async () => {
     fieldMap.style.display = "block"
     payrun.style.display = "none"
-    isEdit=true
+    isEdit = true
 
     input[0].value = fieldmappingData[0].cf__com_kz7zl3_field_mapping;
     input[1].value = fieldmappingData[0].cf__com_kz7zl3_debit_uif_employer;
@@ -223,6 +236,25 @@ const editMapping = () => {
     input[10].value = fieldmappingData[0].cf__com_kz7zl3_credit_medical;
     input[11].value = fieldmappingData[0].cf__com_kz7zl3_credit_pension;
     input[12].value = fieldmappingData[0].cf__com_kz7zl3_credit_other;
+    payAccount[0].value = fieldmappingData[0].cf__com_kz7zl3_wage_account
+    salaryDeductionAccount.value = fieldmappingData[0].cf__com_kz7zl3_salary_deducation
+
+    if (fieldmappingData[0].cf__com_kz7zl3_transaction_type === "individual") {
+        transactionType[0].checked = true
+        transactionType[1].checked = false
+    }
+    else {
+        transactionType[1].checked = true
+        transactionType[0].checked = false
+    }
+    if (fieldmappingData[0].cf__com_kz7zl3_journal_entry === "draft") {
+        transactionType[2].checked = true
+        transactionType[3].checked = false
+    }
+    else {
+        transactionType[3].checked = true
+        transactionType[2].checked = false
+    }
 }
 
 const pageNav = async (index) => {
@@ -230,17 +262,15 @@ const pageNav = async (index) => {
     if (index === 1) {
         recordDiv.style.display = "none";
         document.getElementById("waitingMessage").style.display = "block";
-        document.getElementById("waitingMessage").innerHTML = "Record Fetching... Please wait"
+        document.getElementById("waitingMessage").innerHTML = "Fetching... Please wait"
     }
     for (let i = 0; i < nav.length; i++) {
         navView[i].style.display = "none"
-       index===0? createJournalBtn.style.display = "none":''
+        index === 0 ? createJournalBtn.style.display = "none" : ''
         paymentRunDiv.style.visibility = "hidden"
         textareaDiv.style.visibility = "hidden"
-        document.getElementById("warning").style.display="none"
+        document.getElementById("warning").style.display = "none"
         textarea[0].value = ""
-        console.log(index);
-        
         if (index === i) {
             nav[i].removeAttribute("class")
             nav[i].setAttribute("class", "nav-link active")
@@ -256,7 +286,25 @@ const pageNav = async (index) => {
 
 }
 
-let back=async()=>{
-    isEdit=false
-   await customGet()
+let back = async () => {
+    isEdit = false
+    await customGet()
+}
+
+const fieldMapDelete = async () => {
+    isEdit = false
+    let customDel = {
+        url: `${orgDetails.dc}/cm__com_kz7zl3_field_mapping/${recordId}?organization_id=${orgDetails.orgId}`,
+        method: "DELETE",
+        connection_link_name: "zohobook",
+    };
+    await ZFAPPS.request(customDel)
+        .then(function (value) {
+            console.log(value);
+        })
+        .catch((er) => {
+            console.error(er);
+        });
+    isEdit = false
+
 }

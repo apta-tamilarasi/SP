@@ -8,7 +8,7 @@
     "widgets": [
       {
         "location": "dashboard.widget",
-        "name": "simple pay",
+        "name": "Simple Pay",
         "url": "/app/widget.html",
         "logo": "/app/img/logo.png"
       }
