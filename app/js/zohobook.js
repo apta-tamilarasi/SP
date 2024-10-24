@@ -7,10 +7,12 @@ let newRecord = []
 let nettPay = 0
 let currencyInput = document.getElementById("currency")
 let bankName = document.getElementById("bankname")
+let mappingDatas = []
+let mappingLabel = document.getElementsByClassName("mapping-label")
 
-const journalCreate = async (details) => {
+const journalCreate = async () => {
     await journalCustomGet("", 1)
-    await journal(details)
+    await journal()
 }
 
 const journalCustomCreate = async (journalData) => {
@@ -41,113 +43,36 @@ const journalCustomCreate = async (journalData) => {
         });
 };
 
-const journal = async (details) => {
+const journal = async () => {
+    document.getElementById("create-journal").innerHTML = 'Creating <span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> ';
+    document.getElementById("create-journal").disabled = true
+
+    let salaryDeductionAccount = ''
+    let nettPayAmount = 0
     const journalData = {
         "journal_date": `${journalDate}`,
         "reference_number": `Simple Pay - ${paymentRunId}`,
         "notes": `${textarea[0].value}`,
-        "status": fieldmappingData[0].cf__com_kz7zl3_journal_entry,
+        "status": transactionType[2].checked === true ? "draft" : "published",
         "line_items": [
-            {
-                "account_id": fieldmappingData[0].cf__com_kz7zl3_debit_other,
-                "debit_or_credit": "debit",
-                "amount": 0,
-                "description": "Other Expense"
-            },
-            {
-                "account_id": fieldmappingData[0].cf__com_kz7zl3_credit_other,
-                "debit_or_credit": "credit",
-                "amount": 0,
-                "description": "Other Liability"
-            }
         ]
     }
+    for (let i = 0; i < input.length; i++) {
+        let value = JSON.parse(input[i].value)
+        let obj = {
+            "account_id": value.account,
+            "debit_or_credit": value.type,
+            "amount": Object.values(value.amount).reduce((acc, val) => acc + val, 0),
+            "description": value.label
+        }
+        if (value.label === "Nett Pay") {
+            salaryDeductionAccount = value.account
+            nettPayAmount = obj.amount
+        }
+        journalData.line_items.push(obj)
 
-    details.credit.map((c) => {
-        let account = ""
-        let otherExpense = false
-        if (c.line_item === "medical_aid_liability") {
-            account = fieldmappingData[0].cf__com_kz7zl3_credit_medical
-        }
-        else if (c.line_item === "nett_pay") {
-            account = fieldmappingData[0].cf__com_kz7zl3_credit_nett_pay
-        }
-        else if (c.line_item === "sdl_employer") {
-            account = fieldmappingData[0].cf__com_kz7zl3_credit_sdl_employer
-        }
-        else if (c.line_item === "uif_total") {
-            account = fieldmappingData[0].cf__com_kz7zl3_credit_uif_total
-        }
-        else if (c.line_item === "pension_fund_total") {
-            account = fieldmappingData[0].cf__com_kz7zl3_credit_pension
-        }
-        else if (c.line_item === "tax") {
-            account = fieldmappingData[0].cf__com_kz7zl3_credit_tax
-        }
-        else {
-            account = fieldmappingData[0].cf__com_kz7zl3_credit_other
-            otherExpense = true
-        }
-        let total = Object.values(c.amount).reduce((acc, val) => acc + val, 0);
-        if (otherExpense) {
-            journalData.line_items[1].amount = journalData.line_items[0].amount + total
-        }
-        else {
-            let obj = {
-                "account_id": account,
-                "debit_or_credit": "credit",
-                "amount": total,
-                "description": c.label + " Liability"
-            }
-            c.line_item === "nett_pay" ? nettPay = total : ""
-            journalData.line_items.push(obj)
-        }
-
-    })
-    details.debit.map((d) => {
-        let account = ""
-        let otherExpense = false
-        if (d.line_item === "basic_salary") {
-            account = fieldmappingData[0].cf__com_kz7zl3_debit_basic_salary
-        }
-        else if (d.line_item === "medical_aid_employer") {
-            account = fieldmappingData[0].cf__com_kz7zl3_debit_medical
-        }
-        else if (d.line_item === "sdl_employer") {
-            account = fieldmappingData[0].cf__com_kz7zl3_field_mapping
-        }
-        else if (d.line_item === "uif_employer") {
-            account = fieldmappingData[0].cf__com_kz7zl3_debit_uif_employer
-        }
-        else if (d.line_item === "pension_fund_employer") {
-            account = fieldmappingData[0].cf__com_kz7zl3_debit_pension
-        }
-        else {
-            account = fieldmappingData[0].cf__com_kz7zl3_debit_other
-            otherExpense = true
-        }
-        let total = Object.values(d.amount).reduce((acc, val) => acc + val, 0);
-
-        if (otherExpense) {
-            journalData.line_items[0].amount = journalData.line_items[0].amount + total
-        }
-        else {
-            let obj = {
-                "account_id": account,
-                "debit_or_credit": "debit",
-                "amount": total,
-                "description": d.label + " Expense"
-            }
-            journalData.line_items.push(obj)
-        }
-
-    })
-
-
-    journalData.line_items = journalData.line_items.filter((line) => {
-        return line.amount !== 0
-    })
-
+    }
+    console.log(journalData);
     let journal = {
         url: `${orgDetails.dc}/journals?organization_id=${orgDetails.orgId}`,
         method: "POST",
@@ -156,13 +81,15 @@ const journal = async (details) => {
             raw: journalData,
         },
         connection_link_name: "zohobook",
+
+
     };
     ZFAPPS.request(journal)
         .then(async function (value) {
             let responseJSON = JSON.parse(value.data.body);
 
             if (responseJSON.code == 0) {
-                await createEmployeeTransaction(fieldmappingData[0].cf__com_kz7zl3_wage_account, fieldmappingData[0].cf__com_kz7zl3_salary_deducation, fieldmappingData[0].cf__com_kz7zl3_transaction_type, nettPay)
+                await createEmployeeTransaction(payAccount[0].value, salaryDeductionAccount, transactionType[0].checked === true ? "individual" : "group", nettPayAmount)
                 ShowNotification("success", "Journal created successfully")
                 createJournalBtn.style.display = "none"
                 createJournalBtn.disabled = false
@@ -170,10 +97,18 @@ const journal = async (details) => {
                 textareaDiv.style.visibility = "hidden"
                 textarea[0].value = ""
                 await journalCustomCreate(responseJSON)
-                simplepayClientGet()
+                document.getElementById("create-journal").innerHTML = 'Create Journal';
+                document.getElementById("create-journal").disabled = false
+                pageNav(0)
+
             }
             else {
+                createJournalBtn.style.display = "none"
                 createJournalBtn.disabled = false
+                paymentRunDiv.style.visibility = "hidden"
+                textareaDiv.style.visibility = "hidden"
+                textarea[0].value = ""
+                simplepayClientGet()
                 ShowNotification("error", `${responseJSON.message}`)
             }
 
@@ -494,7 +429,7 @@ const createExpense = async (data) => {
     ZFAPPS.request(journal)
         .then(async function (value) {
             let responseJSON = JSON.parse(value.data.body);
-
+            console.log(responseJSON);
         })
         .catch((err) => {
             console.log(err);
@@ -575,5 +510,149 @@ const createBank = async () => {
     }
     else {
         ShowNotification("error", `Field cannot be empty`)
+    }
+}
+
+let fieldmapCustomPost = async (mappingData) => {
+    let custom = {
+        url: `${orgDetails.dc}/cm__com_kz7zl3_simple_pay_field_mapping?organization_id=${orgDetails.orgId}`,
+        method: "POST",
+        body: {
+            mode: "raw",
+            raw: mappingData,
+        },
+        connection_link_name: "zohobook",
+    };
+    ZFAPPS.request(custom)
+        .then(async function (value) {
+            let responseJSON = JSON.parse(value.data.body);
+            console.log(responseJSON);
+        })
+        .catch(function (err) {
+            console.error("err", err);
+        });
+};
+
+let fieldmapCustomPut = async (mappingData, record_id) => {
+    let custom = {
+        url: `${orgDetails.dc}/cm__com_kz7zl3_simple_pay_field_mapping/${record_id}?organization_id=${orgDetails.orgId}`,
+        method: "PUT",
+        body: {
+            mode: "raw",
+            raw: mappingData,
+        },
+        connection_link_name: "zohobook",
+    };
+    ZFAPPS.request(custom)
+        .then(async function (value) {
+            let responseJSON = JSON.parse(value.data.body);
+            console.log(responseJSON);
+        })
+        .catch(function (err) {
+            console.error("err", err);
+        });
+};
+
+
+let fieldmapCustomGet = async (payrunDetails) => {
+    mappingDatas = []
+
+    let custom = {
+        url: `${orgDetails.dc}/cm__com_kz7zl3_simple_pay_field_mapping?organization_id=${orgDetails.orgId}`,
+        method: "GET",
+        connection_link_name: "zohobook",
+    };
+    ZFAPPS.request(custom)
+        .then(async function (value) {
+            let fieldmapData = JSON.parse(value.data.body)
+            console.log(fieldmapData);
+            if (fieldmapData.module_records.length === 0) {
+                mappingDatas = []
+
+            }
+            else {
+                let fieldMappingData = fieldmapData.module_records;
+                mappingDatas = fieldMappingData;
+            }
+            await createMapping(payrunDetails)
+
+        })
+        .catch(function (err) {
+            console.error("custom get request failed", err);
+        });
+
+}
+
+const storeFieldMapping = async () => {
+    console.log(mappingDatas);
+
+    if (mappingDatas.length > 0) {
+        for (let i = 0; i < input.length; i++) {
+            let value = JSON.parse(input[i].value);
+
+            let matchedMapping = mappingDatas.find((d) => {
+                return d.cf__com_kz7zl3_label_name === `${value.type}_${value.label}`;
+            });
+
+            console.log(matchedMapping);
+            let data = {
+                cf__com_kz7zl3_zb_account: value.account,
+                cf__com_kz7zl3_label_name: `${value.type}_${value.label}`
+            }
+            if (!matchedMapping) {
+                await fieldmapCustomPost(data)
+            }
+            else {
+                if (matchedMapping.cf__com_kz7zl3_zb_account !== value.account) {
+                    let data = {
+                        cf__com_kz7zl3_zb_account: value.account,
+                        cf__com_kz7zl3_label_name: `${value.type}_${value.label}`
+                    }
+                    await fieldmapCustomPut(data, matchedMapping.module_record_id)
+                }
+
+            }
+        }
+        let label = [{ name: "bank", value: payAccount[0].value },
+        { name: "transaction_type", value: transactionType[0].checked === true ? "individual" : "group" },
+        { name: "journal_type", value: transactionType[2].checked === true ? "draft" : "published" }]
+
+        for (let i = 0; i < label.length; i++) {
+            let dataEdit = {
+                cf__com_kz7zl3_zb_account: label[i].value,
+                cf__com_kz7zl3_label_name: label[i].name
+            }
+            mappingDatas.map(async(data) => {
+                if ((data.cf__com_kz7zl3_label_name === label[i].name)&&(data.cf__com_kz7zl3_zb_account!==label[i].value)) {
+                    await fieldmapCustomPut(dataEdit, data.module_record_id)
+                }
+            })
+        }
+
+
+
+    }
+    else {
+        let label = [{ name: "bank", value: payAccount[0].value },
+        { name: "transaction_type", value: transactionType[0].checked === true ? "individual" : "group" },
+        { name: "journal_type", value: transactionType[2].checked === true ? "draft" : "published" }]
+        for (let i = 0; i < input.length; i++) {
+            let value = JSON.parse(input[i].value);
+            let data = {
+                cf__com_kz7zl3_zb_account: value.account,
+                cf__com_kz7zl3_label_name: `${value.type}_${value.label}`
+            }
+            await fieldmapCustomPost(data)
+        }
+        for (let i = 0; i < label.length; i++) {
+            let data = {
+                cf__com_kz7zl3_zb_account: label[i].value,
+                cf__com_kz7zl3_label_name: label[i].name
+            }
+            await fieldmapCustomPost(data)
+        }
+
+
+
     }
 }

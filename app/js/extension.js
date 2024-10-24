@@ -11,7 +11,9 @@ let recordId = ''
 let isEdit = false
 let payAccount = document.getElementsByClassName("payment-account")
 let transactionType = document.getElementsByClassName("form-check-input")
-let salaryDeductionAccount = document.getElementById("salary-deduction")
+let income = []
+let debit = []
+let bank = []
 
 
 window.onload = function () {
@@ -21,7 +23,7 @@ window.onload = function () {
                 orgDetails.dc = data.organization.api_root_endpoint;
                 orgDetails.orgId = data.organization.organization_id;
                 await chartOfAccountGet()
-                await customGet()
+                await pageNav(0)
             })
             .catch(function (err) {
                 console.error(err);
@@ -38,64 +40,24 @@ let chartOfAccountGet = async () => {
     };
     ZFAPPS.request(account)
         .then(function (value) {
+            console.log(JSON.parse(value.data.body));
 
-            // input.map((input) => {
-            for (let i = 0; i < input.length; i++) {
-                input[i].textContent = ""
-                let selectedOption = document.createElement("option")
-                selectedOption.textContent = "Choose a ZB account"
-                selectedOption.value = ''
-                selectedOption.selected = true
-                input[i].appendChild(selectedOption)
-                let accounts = JSON.parse(value.data.body)
-                if (i === 0) {
-                    payAccount[0].textContent = ""
-                    salaryDeductionAccount.textContent = ''
-                    let selectedOption = document.createElement("option")
-                    selectedOption.textContent = "Choose a ZB Bank account"
-                    selectedOption.value = ''
-                    selectedOption.selected = true
-                    payAccount[0].appendChild(selectedOption)
-
-                    let selectedOptionSalary = document.createElement("option")
-                    selectedOptionSalary.textContent = "Choose a ZB account"
-                    selectedOptionSalary.value = ''
-                    selectedOptionSalary.selected = true
-                    salaryDeductionAccount.appendChild(selectedOptionSalary)
-
+            income = []
+            expense = []
+            bank = []
+            let accounts = JSON.parse(value.data.body)
+            accounts.chartofaccounts.map((acc) => {
+                if (acc.account_type === "expense") {
+                    expense.push(acc)
                 }
 
-                accounts.chartofaccounts.map((acc) => {
-                    let option = document.createElement("option")
-                    option.textContent = acc.account_name
-                    option.value = acc.account_id
-
-                    if (i === 0) {
-                        if (acc.account_type === "expense") {
-                            let optionSalary = document.createElement("option")
-                            optionSalary.textContent = acc.account_name
-                            optionSalary.value = acc.account_id
-                            salaryDeductionAccount.appendChild(optionSalary)
-
-                        }
-                        if (acc.account_type === "bank") {
-                            payAccount[0].appendChild(option)
-                        }
-                    }
-                    if (i >= 0 && i <= 5) {
-                        if (acc.account_type === "expense") {
-                            input[i].appendChild(option)
-                        }
-                    }
-                    else {
-                        if (acc.account_type === "income") {
-                            input[i].appendChild(option)
-                        }
-                    }
-                })
-            }
-            // })
-
+                else if (acc.account_type === "other_current_liability") {
+                    income.push(acc)
+                }
+                else if (acc.account_type === "bank") {
+                    bank.push(acc)
+                }
+            })
 
         })
         .catch(function (err) {
@@ -103,16 +65,7 @@ let chartOfAccountGet = async () => {
         });
 };
 
-const cancel = () => {
-    for (let i = 0; i < input.length; i++) {
-        input[i].textContent = ""
-    }
-    chartOfAccountGet()
-}
 const save = async () => {
-    if (isEdit === true) {
-        await fieldMapDelete()
-    }
     let isEmpty = false
     for (let i = 0; i < input.length; i++) {
         if (input[i].value === "") {
@@ -120,94 +73,16 @@ const save = async () => {
             break;
         }
     }
-    if (payAccount[0].value === "" && salaryDeductionAccount.value != "") {
-        isEmpty = true
-    }
+    payAccount[0].value !== "" ? "" : isEmpty = true
     if (isEmpty) {
         ShowNotification("error", "Please map all field")
     }
     else {
-        ShowNotification("success", "Field mapping successfully")
-        let mappingData = {
-            cf__com_kz7zl3_field_mapping: input[0].value,
-            cf__com_kz7zl3_debit_uif_employer: input[1].value,
-            cf__com_kz7zl3_debit_basic_salary: input[2].value,
-            cf__com_kz7zl3_debit_medical: input[3].value,
-            cf__com_kz7zl3_debit_pension: input[4].value,
-            cf__com_kz7zl3_debit_other: input[5].value,
-            cf__com_kz7zl3_credit_sdl_employer: input[6].value,
-            cf__com_kz7zl3_credit_uif_total: input[7].value,
-            cf__com_kz7zl3_credit_nett_pay: input[8].value,
-            cf__com_kz7zl3_credit_tax: input[9].value,
-            cf__com_kz7zl3_credit_medical: input[10].value,
-            cf__com_kz7zl3_credit_pension: input[11].value,
-            cf__com_kz7zl3_credit_other: input[12].value,
-            cf__com_kz7zl3_wage_account: payAccount[0].value,
-            cf__com_kz7zl3_salary_deducation: salaryDeductionAccount.value,
-            cf__com_kz7zl3_transaction_type: transactionType[0].checked === true ? "individual" : "group",
-            cf__com_kz7zl3_journal_entry: transactionType[2].checked === true ? "draft" : "published"
-
-        }
-        fieldmappingData = [mappingData]
-        fieldMap.style.display = "none"
-        payrun.style.display = "block"
-        await pageNav(0)
-        await customPost(mappingData)
+        await journal()
+        await storeFieldMapping()
     }
 
 }
-
-let customGet = async () => {
-    if (isEdit) {
-        await fieldMapDelete()
-    }
-    let custom = {
-        url: `${orgDetails.dc}/cm__com_kz7zl3_field_mapping?organization_id=${orgDetails.orgId}`,
-        method: "GET",
-        connection_link_name: "zohobook",
-    };
-    ZFAPPS.request(custom)
-        .then(async function (value) {
-            let fieldmapData = JSON.parse(value.data.body)
-            if (fieldmapData.module_records.length === 0) {
-                fieldMap.style.display = "block"
-                payrun.style.display = "none"
-            }
-            else {
-                fieldmappingData = fieldmapData.module_records
-                recordId = fieldmapData.module_records[0].module_record_id
-                fieldMap.style.display = "none"
-                payrun.style.display = "block"
-                await simplepayClientGet()
-            }
-
-        })
-        .catch(function (err) {
-            ShowNotification("error", "Simple Pay API Key is Invalid")
-            console.error("custom get request failed", err);
-        });
-
-}
-let customPost = async (mappingData) => {
-    let custom = {
-        url: `${orgDetails.dc}/cm__com_kz7zl3_field_mapping?organization_id=${orgDetails.orgId}`,
-        method: "POST",
-        body: {
-            mode: "raw",
-            raw: mappingData,
-        },
-        connection_link_name: "zohobook",
-    };
-    ZFAPPS.request(custom)
-        .then(async function (value) {
-            let responseJSON = JSON.parse(value.data.body);
-            recordId = responseJSON.module_record.module_record_id
-            await simplepayClientGet()
-        })
-        .catch(function (err) {
-            console.error("err", err);
-        });
-};
 
 const ShowNotification = (type, message) => {
     ZFAPPS.invoke("SHOW_NOTIFICATION", {
@@ -218,55 +93,24 @@ const ShowNotification = (type, message) => {
     });
 };
 
-const editMapping = async () => {
-    fieldMap.style.display = "block"
-    payrun.style.display = "none"
-    isEdit = true
-
-    input[0].value = fieldmappingData[0].cf__com_kz7zl3_field_mapping;
-    input[1].value = fieldmappingData[0].cf__com_kz7zl3_debit_uif_employer;
-    input[2].value = fieldmappingData[0].cf__com_kz7zl3_debit_basic_salary;
-    input[3].value = fieldmappingData[0].cf__com_kz7zl3_debit_medical;
-    input[4].value = fieldmappingData[0].cf__com_kz7zl3_debit_pension;
-    input[5].value = fieldmappingData[0].cf__com_kz7zl3_debit_other;
-    input[6].value = fieldmappingData[0].cf__com_kz7zl3_credit_sdl_employer;
-    input[7].value = fieldmappingData[0].cf__com_kz7zl3_credit_uif_total;
-    input[8].value = fieldmappingData[0].cf__com_kz7zl3_credit_nett_pay;
-    input[9].value = fieldmappingData[0].cf__com_kz7zl3_credit_tax;
-    input[10].value = fieldmappingData[0].cf__com_kz7zl3_credit_medical;
-    input[11].value = fieldmappingData[0].cf__com_kz7zl3_credit_pension;
-    input[12].value = fieldmappingData[0].cf__com_kz7zl3_credit_other;
-    payAccount[0].value = fieldmappingData[0].cf__com_kz7zl3_wage_account
-    salaryDeductionAccount.value = fieldmappingData[0].cf__com_kz7zl3_salary_deducation
-
-    if (fieldmappingData[0].cf__com_kz7zl3_transaction_type === "individual") {
-        transactionType[0].checked = true
-        transactionType[1].checked = false
-    }
-    else {
-        transactionType[1].checked = true
-        transactionType[0].checked = false
-    }
-    if (fieldmappingData[0].cf__com_kz7zl3_journal_entry === "draft") {
-        transactionType[2].checked = true
-        transactionType[3].checked = false
-    }
-    else {
-        transactionType[3].checked = true
-        transactionType[2].checked = false
-    }
-}
 
 const pageNav = async (index) => {
+    document.getElementById("mappingdiv").style.display = "none"
+    document.getElementById("simplepay-payrun-select-div").style.display = "block"
     index === 0 ? simplepayClientGet() : journalCustomGet("record", 1)
+
     if (index === 1) {
         recordDiv.style.display = "none";
         document.getElementById("waitingMessage").style.display = "block";
         document.getElementById("waitingMessage").innerHTML = "Fetching... Please wait"
     }
+    else if (index === 0) {
+        createJournalBtn.style.display = "none"
+        createJournalBtn.disabled = false
+    }
     for (let i = 0; i < nav.length; i++) {
         navView[i].style.display = "none"
-        index === 0 ? createJournalBtn.style.display = "none" : ''
+
         paymentRunDiv.style.visibility = "hidden"
         textareaDiv.style.visibility = "hidden"
         document.getElementById("warning").style.display = "none"
@@ -285,26 +129,142 @@ const pageNav = async (index) => {
     }
 
 }
+let createMapping = async (payrunDetails) => {
+    document.getElementById("simplepay-payrun-select-div").style.display = "none";
+    let head = document.getElementsByClassName("simplepayHead");
+    document.getElementById("mappingdiv").style.display = "block";
 
-let back = async () => {
-    isEdit = false
-    await customGet()
-}
+    let simplepayMappedCategory = document.getElementsByClassName("simplepaymappedcategory");
+    let simplepayUnmappedCategory = document.getElementsByClassName("simplepayunmappedcategory");
+    payAccount[0].textContent = "";
 
-const fieldMapDelete = async () => {
-    isEdit = false
-    let customDel = {
-        url: `${orgDetails.dc}/cm__com_kz7zl3_field_mapping/${recordId}?organization_id=${orgDetails.orgId}`,
-        method: "DELETE",
-        connection_link_name: "zohobook",
-    };
-    await ZFAPPS.request(customDel)
-        .then(function (value) {
-            console.log(value);
-        })
-        .catch((er) => {
-            console.error(er);
+    for (let i = 0; i < simplepayMappedCategory.length; i++) {
+        simplepayMappedCategory[i].innerHTML = '';
+        simplepayUnmappedCategory[i].innerHTML = '';
+    }
+
+    let selectedOption = document.createElement("option");
+    selectedOption.textContent = "Choose a ZB Bank account";
+    selectedOption.value = '';
+    selectedOption.selected = true;
+    payAccount[0].appendChild(selectedOption);
+
+    bank.map((b) => {
+        let option = document.createElement("option");
+        option.textContent = b.account_name;
+        option.value = b.account_id;
+       
+        if (mappingDatas.length > 0) {
+
+            mappingDatas.map((data) => {
+                (data.cf__com_kz7zl3_label_name === "bank") && (data.cf__com_kz7zl3_zb_account === b.account_id) ? option.selected = true :
+                    data.cf__com_kz7zl3_label_name === "journal_type" ? data.cf__com_kz7zl3_zb_account === "published" ? transactionType[3].checked = true : transactionType[2].checked = true :
+                        data.cf__com_kz7zl3_label_name === "transaction_type" ? data.cf__com_kz7zl3_zb_account === "group" ? transactionType[1].checked = true : transactionType[0].checked = true : selectedOption.selected = false
+            })
+        }
+        payAccount[0].appendChild(option);
+    });
+
+    payrunDetails.debit.map((d) => {
+        var div = document.createElement('div');
+        div.className = 'input-group mb-3';
+        var label = document.createElement('label');
+        label.className = 'input-group-text mapping-label';
+        label.setAttribute('for', 'inputGroupSelect01');
+        label.textContent = d.label;
+
+        var select = document.createElement('select');
+        select.className = 'form-select fieldmap-input';
+        select.id = 'inputGroupSelect01';
+        var selectedOption = document.createElement('option');
+        selectedOption.selected = true;
+        selectedOption.textContent = 'Choose ZB Account';
+        selectedOption.value = "";
+        select.appendChild(selectedOption);
+        div.appendChild(label);
+        div.appendChild(select);
+
+        let isMapped = false;  
+
+        expense.map((e) => {
+            var option = document.createElement('option');
+            d.account = e.account_id;
+            d.type = "debit";
+            option.textContent = e.account_name;
+
+            if (mappingDatas.length > 0) {
+                mappingDatas.find((data) => {
+                    if (data.cf__com_kz7zl3_label_name === `${d.type}_${d.label}` && data.cf__com_kz7zl3_zb_account === e.account_id) {
+                        option.selected = true;
+                        isMapped = true;  
+                    }
+                });
+            }
+            option.value = JSON.stringify(d);
+            select.appendChild(option);
         });
-    isEdit = false
 
-}
+        if (d.category === "salary_expense") {
+            isMapped ? simplepayMappedCategory[0].appendChild(div) : simplepayUnmappedCategory[0].appendChild(div);
+        } else if (d.category === "expense") {
+            if (d.line_item === "pension_fund_employer" || d.line_item === "medical_aid_employer") {
+                isMapped ? simplepayMappedCategory[1].appendChild(div) : simplepayUnmappedCategory[1].appendChild(div);
+            } else {
+                isMapped ? simplepayMappedCategory[2].appendChild(div) : simplepayUnmappedCategory[2].appendChild(div);
+            }
+        }
+    });
+
+    payrunDetails.credit.map((c) => {
+        var div = document.createElement('div');
+        div.className = 'input-group mb-3';
+        var label = document.createElement('label');
+        label.className = 'input-group-text mapping-label';
+        label.setAttribute('for', 'inputGroupSelect01');
+        label.textContent = c.label;
+
+        var select = document.createElement('select');
+        select.className = 'form-select fieldmap-input';
+        select.id = 'inputGroupSelect01';
+        var selectedOption = document.createElement('option');
+        selectedOption.selected = true;
+        selectedOption.textContent = 'Choose ZB Account';
+        selectedOption.value = "";
+        select.appendChild(selectedOption);
+        div.appendChild(label);
+        div.appendChild(select);
+
+        let isMapped = false;  
+
+        income.map((e) => {
+            var option = document.createElement('option');
+            c.account = e.account_id;
+            c.type = "credit";
+            option.textContent = e.account_name;
+
+            if (mappingDatas.length > 0) {
+                mappingDatas.find((data) => {
+                    if (data.cf__com_kz7zl3_label_name === `${c.type}_${c.label}` && data.cf__com_kz7zl3_zb_account === e.account_id) {
+                        option.selected = true;
+                        isMapped = true;  
+                    }
+                });
+            }
+            option.value = JSON.stringify(c);
+            select.appendChild(option);
+        });
+
+        if (c.line_item === "medical_aid_liability" || c.line_item === "pension_fund_total") {
+            isMapped ? simplepayMappedCategory[3].appendChild(div) : simplepayUnmappedCategory[3].appendChild(div);
+        } else {
+            isMapped ? simplepayMappedCategory[4].appendChild(div) : simplepayUnmappedCategory[4].appendChild(div);
+        }
+    });
+
+    for (let i = 0; i < simplepayMappedCategory.length; i++) {
+        if (simplepayMappedCategory[i].innerHTML === '' && simplepayUnmappedCategory[i].innerHTML === '') {
+            head[i].style.visibility = "hidden";
+        }
+    }
+};
+

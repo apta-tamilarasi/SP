@@ -29,13 +29,14 @@
 }
 #bankcreate-btn{
     display: flex !important;
-    margin: 25px 0px 0px 0px;
+    margin: 25px 0px 0px 15px;
 }
 #bankname{
     padding: .375rem 2.25rem .375rem .75rem !important;
 }
 .d-grid .btn {
-    margin-left: 5px;
+    margin-left: 15px;
+    
 }
 
 .head {
@@ -61,6 +62,9 @@
     margin: auto;
     text-align: center;
 }
+#simplepay{
+    margin-top: 20px !important;
+}
 .nav-tabs{
     /* padding: 10px 0px; */
     width: 58%;
@@ -75,6 +79,8 @@
 
 .input-group-text {
     width: 42%;
+    white-space: normal !important;     
+    word-wrap: break-word;
 }
 
 h2 {
@@ -168,10 +174,10 @@ textarea {
     color: red;
     font-size: 15px;
 }
-
+/* 
 tr:hover .delete-icon {
     visibility: visible;
-}
+} */
 
 
 .dots {
@@ -245,7 +251,7 @@ tr:hover .delete-icon {
 }
 
 #wageInput{
-    padding:30px 5px 20px 5px;
+    padding:30px 5px 20px 15px;
 }
 #wageInput .input-group-text{
     width: 100% !important;

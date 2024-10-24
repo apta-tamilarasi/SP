@@ -49,13 +49,13 @@ const clientSelect = async (value) => {
         paymentRunDiv.style.visibility = "hidden"
         textareaDiv.style.visibility = "hidden"
         ShowNotification("error", "Please select the Valid company")
-}
+    }
 }
 const payrunSelect = (value) => {
     let splitValue = value.split(",")
     paymentRunId = splitValue[0]
     journalDate = splitValue[1]
-    createJournalBtn.innerHTML = "Create Journal"
+    createJournalBtn.innerHTML = "Next"
     createJournalBtn.style.display = "block"
 
 }
@@ -68,6 +68,8 @@ const simplepayPaymentRunGet = async (id) => {
     };
     ZFAPPS.request(client)
         .then(function (value) {
+            console.log(JSON.parse(value.data.body));
+
             try {
                 let paymentruns = JSON.parse(value.data.body)
                 if (paymentruns.length > 0) {
@@ -89,9 +91,11 @@ const simplepayPaymentRunGet = async (id) => {
                 else {
                     paymentRunDiv.style.visibility = "hidden"
                     textareaDiv.style.visibility = "hidden"
+                    createJournalBtn.style.display = "none"
+                    createJournalBtn.disabled = false
                     ShowNotification("error", "There is no payrun data avilable for the selected company")
                 }
-              
+
 
             }
             catch (err) {
@@ -106,10 +110,10 @@ const simplepayPaymentRunGet = async (id) => {
 
 
 const getPayment = async () => {
-   
+
     let textarea = document.getElementsByTagName("textarea")
     if (textarea[0].value != "") {
-        createJournalBtn.innerHTML = 'Creating <span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> ';
+        createJournalBtn.innerHTML = 'Wait <span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span> ';
         createJournalBtn.disabled = true
         let pay = {
             url: `https://api.payroll.simplepay.cloud/v1/payment_runs/${paymentRunId}/accounting`,
@@ -118,9 +122,12 @@ const getPayment = async () => {
         };
         ZFAPPS.request(pay)
             .then(async function (value) {
+                console.log(JSON.parse(value.data.body));
+
                 try {
                     payrunDetails = JSON.parse(value.data.body)
-                    await journalCreate(payrunDetails)
+                    await fieldmapCustomGet(payrunDetails)
+                    // await journalCreate(payrunDetails)
                 }
                 catch (err) {
                     createJournalBtn.disabled = false
@@ -140,16 +147,20 @@ const getPayment = async () => {
 const getPayslipForSpecificPayrun = async () => {
     let client = {
         url: `https://api.payroll.simplepay.cloud/v1/payment_runs/${paymentRunId}/payslips`,
-        // url:`https://api.payroll.simplepay.cloud/v1/clients/283811/employees`,
-        // url:`https://api.payroll.simplepay.cloud/v1/payslips/45757524`,
         method: "GET",
         connection_link_name: "paysimple",
-    };
+    }
+
     return ZFAPPS.request(client)
         .then(function (value) {
+            console.log(value);
+
+            console.log(JSON.parse(value.data.body));
+
             try {
-               return JSON.parse(value.data.body);
-               
+
+                return JSON.parse(value.data.body);
+
             }
             catch (err) {
                 console.error(err);
